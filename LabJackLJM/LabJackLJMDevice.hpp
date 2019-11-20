@@ -14,6 +14,26 @@ BEGIN_NAMESPACE_MW
 
 
 class LabJackLJMDevice : public IODevice, boost::noncopyable {
+    
+public:
+    static const std::string DEVICE_TYPE;
+    static const std::string CONNECTION_TYPE;
+    static const std::string IDENTIFIER;
+    
+    static void describeComponent(ComponentInfo &info);
+    
+    explicit LabJackLJMDevice(const ParameterValueMap &parameters);
+    ~LabJackLJMDevice();
+    
+    bool initialize() override;
+    
+private:
+    const std::string deviceType;
+    const std::string connectionType;
+    const std::string identifier;
+    
+    int handle;
+    
 };
 
 
