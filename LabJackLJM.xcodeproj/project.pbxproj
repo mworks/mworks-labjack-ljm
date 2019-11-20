@@ -6,9 +6,78 @@
 	objectVersion = 50;
 	objects = {
 
+/* Begin PBXAggregateTarget section */
+		E1E7C6FE2385C5FA00F37E3E /* Install */ = {
+			isa = PBXAggregateTarget;
+			buildConfigurationList = E1E7C7002385C5FA00F37E3E /* Build configuration list for PBXAggregateTarget "Install" */;
+			buildPhases = (
+				E1E7C7122385CA8500F37E3E /* CopyFiles */,
+			);
+			dependencies = (
+				E1E7C7052385C61F00F37E3E /* PBXTargetDependency */,
+			);
+			name = Install;
+			productName = Install;
+		};
+		E1E7C7012385C60500F37E3E /* Everything */ = {
+			isa = PBXAggregateTarget;
+			buildConfigurationList = E1E7C7022385C60500F37E3E /* Build configuration list for PBXAggregateTarget "Everything" */;
+			buildPhases = (
+			);
+			dependencies = (
+				E1E7C7072385C62200F37E3E /* PBXTargetDependency */,
+			);
+			name = Everything;
+			productName = Everything;
+		};
+/* End PBXAggregateTarget section */
+
+/* Begin PBXBuildFile section */
+		E1E7C6FD2385C5AE00F37E3E /* LabJackLJMPlugin.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E1E7C6FC2385C5AE00F37E3E /* LabJackLJMPlugin.cpp */; };
+		E1E7C70F2385C94500F37E3E /* MWorksCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E1E7C70E2385C94500F37E3E /* MWorksCore.framework */; };
+		E1E7C7112385C99500F37E3E /* libLabJackM.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = E1E7C7102385C99500F37E3E /* libLabJackM.dylib */; };
+		E1E7C7132385CA8E00F37E3E /* LabJackLJM.bundle in CopyFiles */ = {isa = PBXBuildFile; fileRef = E1E7C6F32385C42F00F37E3E /* LabJackLJM.bundle */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		E1E7C7042385C61F00F37E3E /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = E1E7C6EB2385C42F00F37E3E /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = E1E7C6F22385C42F00F37E3E;
+			remoteInfo = LabJackLJM;
+		};
+		E1E7C7062385C62200F37E3E /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = E1E7C6EB2385C42F00F37E3E /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = E1E7C6FE2385C5FA00F37E3E;
+			remoteInfo = Install;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		E1E7C7122385CA8500F37E3E /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "$(MW_PLUGINS_DIR)";
+			dstSubfolderSpec = 0;
+			files = (
+				E1E7C7132385CA8E00F37E3E /* LabJackLJM.bundle in CopyFiles */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
 /* Begin PBXFileReference section */
 		E1E7C6F32385C42F00F37E3E /* LabJackLJM.bundle */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = LabJackLJM.bundle; sourceTree = BUILT_PRODUCTS_DIR; };
 		E1E7C6F62385C42F00F37E3E /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		E1E7C6FC2385C5AE00F37E3E /* LabJackLJMPlugin.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = LabJackLJMPlugin.cpp; sourceTree = "<group>"; };
+		E1E7C7092385C67000F37E3E /* macOS.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = macOS.xcconfig; sourceTree = "<group>"; };
+		E1E7C70A2385C67000F37E3E /* macOS_Plugin.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = macOS_Plugin.xcconfig; sourceTree = "<group>"; };
+		E1E7C70C2385C86800F37E3E /* LabJackLJM-Prefix.pch */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "LabJackLJM-Prefix.pch"; sourceTree = "<group>"; };
+		E1E7C70E2385C94500F37E3E /* MWorksCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = MWorksCore.framework; path = /Library/Frameworks/MWorksCore.framework; sourceTree = "<absolute>"; };
+		E1E7C7102385C99500F37E3E /* libLabJackM.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libLabJackM.dylib; path = /usr/local/lib/libLabJackM.dylib; sourceTree = "<absolute>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -16,6 +85,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				E1E7C70F2385C94500F37E3E /* MWorksCore.framework in Frameworks */,
+				E1E7C7112385C99500F37E3E /* libLabJackM.dylib in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -25,7 +96,9 @@
 		E1E7C6EA2385C42F00F37E3E = {
 			isa = PBXGroup;
 			children = (
+				E1E7C7082385C63F00F37E3E /* External Config */,
 				E1E7C6F52385C42F00F37E3E /* LabJackLJM */,
+				E1E7C70D2385C94500F37E3E /* Frameworks */,
 				E1E7C6F42385C42F00F37E3E /* Products */,
 			);
 			sourceTree = "<group>";
@@ -41,9 +114,38 @@
 		E1E7C6F52385C42F00F37E3E /* LabJackLJM */ = {
 			isa = PBXGroup;
 			children = (
-				E1E7C6F62385C42F00F37E3E /* Info.plist */,
+				E1E7C6FC2385C5AE00F37E3E /* LabJackLJMPlugin.cpp */,
+				E1E7C70B2385C83900F37E3E /* Supporting Files */,
 			);
 			path = LabJackLJM;
+			sourceTree = "<group>";
+		};
+		E1E7C7082385C63F00F37E3E /* External Config */ = {
+			isa = PBXGroup;
+			children = (
+				E1E7C7092385C67000F37E3E /* macOS.xcconfig */,
+				E1E7C70A2385C67000F37E3E /* macOS_Plugin.xcconfig */,
+			);
+			name = "External Config";
+			path = "/Library/Application Support/MWorks/Developer/Xcode";
+			sourceTree = "<absolute>";
+		};
+		E1E7C70B2385C83900F37E3E /* Supporting Files */ = {
+			isa = PBXGroup;
+			children = (
+				E1E7C6F62385C42F00F37E3E /* Info.plist */,
+				E1E7C70C2385C86800F37E3E /* LabJackLJM-Prefix.pch */,
+			);
+			name = "Supporting Files";
+			sourceTree = "<group>";
+		};
+		E1E7C70D2385C94500F37E3E /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				E1E7C70E2385C94500F37E3E /* MWorksCore.framework */,
+				E1E7C7102385C99500F37E3E /* libLabJackM.dylib */,
+			);
+			name = Frameworks;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -55,6 +157,7 @@
 			buildPhases = (
 				E1E7C6EF2385C42F00F37E3E /* Sources */,
 				E1E7C6F02385C42F00F37E3E /* Frameworks */,
+				E1E7C7142385CB3400F37E3E /* ShellScript */,
 				E1E7C6F12385C42F00F37E3E /* Resources */,
 			);
 			buildRules = (
@@ -78,6 +181,12 @@
 					E1E7C6F22385C42F00F37E3E = {
 						CreatedOnToolsVersion = 11.2.1;
 					};
+					E1E7C6FE2385C5FA00F37E3E = {
+						CreatedOnToolsVersion = 11.2.1;
+					};
+					E1E7C7012385C60500F37E3E = {
+						CreatedOnToolsVersion = 11.2.1;
+					};
 				};
 			};
 			buildConfigurationList = E1E7C6EE2385C42F00F37E3E /* Build configuration list for PBXProject "LabJackLJM" */;
@@ -94,6 +203,8 @@
 			projectRoot = "";
 			targets = (
 				E1E7C6F22385C42F00F37E3E /* LabJackLJM */,
+				E1E7C6FE2385C5FA00F37E3E /* Install */,
+				E1E7C7012385C60500F37E3E /* Everything */,
 			);
 		};
 /* End PBXProject section */
@@ -108,153 +219,97 @@
 		};
 /* End PBXResourcesBuildPhase section */
 
+/* Begin PBXShellScriptBuildPhase section */
+		E1E7C7142385CB3400F37E3E /* ShellScript */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/zsh;
+			shellScript = "liblabjackm_path=/usr/local/lib/libLabJackM.dylib\n\n/usr/bin/xcrun install_name_tool \\\n  -change \\\n  \"$(/usr/bin/xcrun otool -DX $liblabjackm_path)\" \\\n  \"$liblabjackm_path\" \\\n  \"${BUILT_PRODUCTS_DIR}/${EXECUTABLE_PATH}\"\n";
+			showEnvVarsInLog = 0;
+		};
+/* End PBXShellScriptBuildPhase section */
+
 /* Begin PBXSourcesBuildPhase section */
 		E1E7C6EF2385C42F00F37E3E /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				E1E7C6FD2385C5AE00F37E3E /* LabJackLJMPlugin.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
 
+/* Begin PBXTargetDependency section */
+		E1E7C7052385C61F00F37E3E /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = E1E7C6F22385C42F00F37E3E /* LabJackLJM */;
+			targetProxy = E1E7C7042385C61F00F37E3E /* PBXContainerItemProxy */;
+		};
+		E1E7C7072385C62200F37E3E /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = E1E7C6FE2385C5FA00F37E3E /* Install */;
+			targetProxy = E1E7C7062385C62200F37E3E /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
 /* Begin XCBuildConfiguration section */
-		E1E7C6F72385C42F00F37E3E /* Debug */ = {
+		E1E7C6F72385C42F00F37E3E /* Development */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ALWAYS_SEARCH_USER_PATHS = NO;
-				CLANG_ANALYZER_NONNULL = YES;
-				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
-				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
-				CLANG_CXX_LIBRARY = "libc++";
-				CLANG_ENABLE_MODULES = YES;
-				CLANG_ENABLE_OBJC_ARC = YES;
-				CLANG_ENABLE_OBJC_WEAK = YES;
-				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
-				CLANG_WARN_BOOL_CONVERSION = YES;
-				CLANG_WARN_COMMA = YES;
-				CLANG_WARN_CONSTANT_CONVERSION = YES;
-				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
-				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
-				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
-				CLANG_WARN_EMPTY_BODY = YES;
-				CLANG_WARN_ENUM_CONVERSION = YES;
-				CLANG_WARN_INFINITE_RECURSION = YES;
-				CLANG_WARN_INT_CONVERSION = YES;
-				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
-				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
-				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
-				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
-				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
-				CLANG_WARN_STRICT_PROTOTYPES = YES;
-				CLANG_WARN_SUSPICIOUS_MOVE = YES;
-				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
-				CLANG_WARN_UNREACHABLE_CODE = YES;
-				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
-				COPY_PHASE_STRIP = NO;
-				DEBUG_INFORMATION_FORMAT = dwarf;
-				ENABLE_STRICT_OBJC_MSGSEND = YES;
-				ENABLE_TESTABILITY = YES;
-				GCC_C_LANGUAGE_STANDARD = gnu11;
-				GCC_DYNAMIC_NO_PIC = NO;
-				GCC_NO_COMMON_BLOCKS = YES;
-				GCC_OPTIMIZATION_LEVEL = 0;
-				GCC_PREPROCESSOR_DEFINITIONS = (
-					"DEBUG=1",
+			};
+			name = Development;
+		};
+		E1E7C6FA2385C42F00F37E3E /* Development */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = E1E7C70A2385C67000F37E3E /* macOS_Plugin.xcconfig */;
+			buildSettings = {
+				GCC_PRECOMPILE_PREFIX_HEADER = YES;
+				GCC_PREFIX_HEADER = "LabJackLJM/LabJackLJM-Prefix.pch";
+				HEADER_SEARCH_PATHS = (
 					"$(inherited)",
+					/usr/local/include,
 				);
-				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
-				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
-				GCC_WARN_UNDECLARED_SELECTOR = YES;
-				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
-				GCC_WARN_UNUSED_FUNCTION = YES;
-				GCC_WARN_UNUSED_VARIABLE = YES;
-				MACOSX_DEPLOYMENT_TARGET = 10.15;
-				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
-				MTL_FAST_MATH = YES;
-				ONLY_ACTIVE_ARCH = YES;
-				SDKROOT = macosx;
-			};
-			name = Debug;
-		};
-		E1E7C6F82385C42F00F37E3E /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				ALWAYS_SEARCH_USER_PATHS = NO;
-				CLANG_ANALYZER_NONNULL = YES;
-				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
-				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
-				CLANG_CXX_LIBRARY = "libc++";
-				CLANG_ENABLE_MODULES = YES;
-				CLANG_ENABLE_OBJC_ARC = YES;
-				CLANG_ENABLE_OBJC_WEAK = YES;
-				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
-				CLANG_WARN_BOOL_CONVERSION = YES;
-				CLANG_WARN_COMMA = YES;
-				CLANG_WARN_CONSTANT_CONVERSION = YES;
-				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
-				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
-				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
-				CLANG_WARN_EMPTY_BODY = YES;
-				CLANG_WARN_ENUM_CONVERSION = YES;
-				CLANG_WARN_INFINITE_RECURSION = YES;
-				CLANG_WARN_INT_CONVERSION = YES;
-				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
-				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
-				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
-				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
-				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
-				CLANG_WARN_STRICT_PROTOTYPES = YES;
-				CLANG_WARN_SUSPICIOUS_MOVE = YES;
-				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
-				CLANG_WARN_UNREACHABLE_CODE = YES;
-				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
-				COPY_PHASE_STRIP = NO;
-				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
-				ENABLE_NS_ASSERTIONS = NO;
-				ENABLE_STRICT_OBJC_MSGSEND = YES;
-				GCC_C_LANGUAGE_STANDARD = gnu11;
-				GCC_NO_COMMON_BLOCKS = YES;
-				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
-				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
-				GCC_WARN_UNDECLARED_SELECTOR = YES;
-				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
-				GCC_WARN_UNUSED_FUNCTION = YES;
-				GCC_WARN_UNUSED_VARIABLE = YES;
-				MACOSX_DEPLOYMENT_TARGET = 10.15;
-				MTL_ENABLE_DEBUG_INFO = NO;
-				MTL_FAST_MATH = YES;
-				SDKROOT = macosx;
-			};
-			name = Release;
-		};
-		E1E7C6FA2385C42F00F37E3E /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				CODE_SIGN_STYLE = Automatic;
-				COMBINE_HIDPI_IMAGES = YES;
 				INFOPLIST_FILE = LabJackLJM/Info.plist;
-				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Bundles";
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					/usr/local/lib,
+				);
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					"-headerpad_max_install_names",
+				);
 				PRODUCT_BUNDLE_IDENTIFIER = "org.mworks-project.LabJackLJM";
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				SKIP_INSTALL = YES;
-				WRAPPER_EXTENSION = bundle;
 			};
-			name = Debug;
+			name = Development;
 		};
-		E1E7C6FB2385C42F00F37E3E /* Release */ = {
+		E1E7C6FF2385C5FA00F37E3E /* Development */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = E1E7C7092385C67000F37E3E /* macOS.xcconfig */;
 			buildSettings = {
-				CODE_SIGN_STYLE = Automatic;
-				COMBINE_HIDPI_IMAGES = YES;
-				INFOPLIST_FILE = LabJackLJM/Info.plist;
-				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Bundles";
-				PRODUCT_BUNDLE_IDENTIFIER = "org.mworks-project.LabJackLJM";
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				SKIP_INSTALL = YES;
-				WRAPPER_EXTENSION = bundle;
 			};
-			name = Release;
+			name = Development;
+		};
+		E1E7C7032385C60500F37E3E /* Development */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = E1E7C7092385C67000F37E3E /* macOS.xcconfig */;
+			buildSettings = {
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Development;
 		};
 /* End XCBuildConfiguration section */
 
@@ -262,20 +317,34 @@
 		E1E7C6EE2385C42F00F37E3E /* Build configuration list for PBXProject "LabJackLJM" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				E1E7C6F72385C42F00F37E3E /* Debug */,
-				E1E7C6F82385C42F00F37E3E /* Release */,
+				E1E7C6F72385C42F00F37E3E /* Development */,
 			);
 			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
+			defaultConfigurationName = Development;
 		};
 		E1E7C6F92385C42F00F37E3E /* Build configuration list for PBXNativeTarget "LabJackLJM" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				E1E7C6FA2385C42F00F37E3E /* Debug */,
-				E1E7C6FB2385C42F00F37E3E /* Release */,
+				E1E7C6FA2385C42F00F37E3E /* Development */,
 			);
 			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
+			defaultConfigurationName = Development;
+		};
+		E1E7C7002385C5FA00F37E3E /* Build configuration list for PBXAggregateTarget "Install" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				E1E7C6FF2385C5FA00F37E3E /* Development */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Development;
+		};
+		E1E7C7022385C60500F37E3E /* Build configuration list for PBXAggregateTarget "Everything" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				E1E7C7032385C60500F37E3E /* Development */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Development;
 		};
 /* End XCConfigurationList section */
 	};
