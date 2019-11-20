@@ -37,6 +37,7 @@
 		E1E7C70F2385C94500F37E3E /* MWorksCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E1E7C70E2385C94500F37E3E /* MWorksCore.framework */; };
 		E1E7C7112385C99500F37E3E /* libLabJackM.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = E1E7C7102385C99500F37E3E /* libLabJackM.dylib */; };
 		E1E7C7132385CA8E00F37E3E /* LabJackLJM.bundle in CopyFiles */ = {isa = PBXBuildFile; fileRef = E1E7C6F32385C42F00F37E3E /* LabJackLJM.bundle */; };
+		E1E7C7172385CEE300F37E3E /* LabJackLJMDevice.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E1E7C7152385CEE300F37E3E /* LabJackLJMDevice.cpp */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -78,6 +79,8 @@
 		E1E7C70C2385C86800F37E3E /* LabJackLJM-Prefix.pch */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "LabJackLJM-Prefix.pch"; sourceTree = "<group>"; };
 		E1E7C70E2385C94500F37E3E /* MWorksCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = MWorksCore.framework; path = /Library/Frameworks/MWorksCore.framework; sourceTree = "<absolute>"; };
 		E1E7C7102385C99500F37E3E /* libLabJackM.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libLabJackM.dylib; path = /usr/local/lib/libLabJackM.dylib; sourceTree = "<absolute>"; };
+		E1E7C7152385CEE300F37E3E /* LabJackLJMDevice.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = LabJackLJMDevice.cpp; sourceTree = "<group>"; };
+		E1E7C7162385CEE300F37E3E /* LabJackLJMDevice.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = LabJackLJMDevice.hpp; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -114,6 +117,8 @@
 		E1E7C6F52385C42F00F37E3E /* LabJackLJM */ = {
 			isa = PBXGroup;
 			children = (
+				E1E7C7162385CEE300F37E3E /* LabJackLJMDevice.hpp */,
+				E1E7C7152385CEE300F37E3E /* LabJackLJMDevice.cpp */,
 				E1E7C6FC2385C5AE00F37E3E /* LabJackLJMPlugin.cpp */,
 				E1E7C70B2385C83900F37E3E /* Supporting Files */,
 			);
@@ -245,6 +250,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				E1E7C7172385CEE300F37E3E /* LabJackLJMDevice.cpp in Sources */,
 				E1E7C6FD2385C5AE00F37E3E /* LabJackLJMPlugin.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

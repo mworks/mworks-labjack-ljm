@@ -9,7 +9,14 @@
 #ifndef LabJackLJM_Prefix_pch
 #define LabJackLJM_Prefix_pch
 
-// Include any system framework and library headers here that should be included in all compilation units.
-// You will also need to set the Prefix Header build setting of one or more of your targets to reference this file.
+#include <LabJackM.h>
+
+#ifdef __cplusplus
+
+#include <MWorksCore/IODevice.h>
+#include <MWorksCore/Plugin.h>
+#include <MWorksCore/StandardComponentFactory.h>
+
+#endif /* defined(__cplusplus) */
 
 #endif /* LabJackLJM_Prefix_pch */

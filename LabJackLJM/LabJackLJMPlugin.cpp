@@ -6,4 +6,19 @@
 //  Copyright © 2019 The MWorks Project. All rights reserved.
 //
 
-#include <stdio.h>
+
+BEGIN_NAMESPACE_MW
+
+
+class LabJackLJMPlugin : public Plugin {
+    void registerComponents(boost::shared_ptr<ComponentRegistry> registry) override {
+    }
+};
+
+
+extern "C" Plugin * getPlugin() {
+    return new LabJackLJMPlugin();
+}
+
+
+END_NAMESPACE_MW
