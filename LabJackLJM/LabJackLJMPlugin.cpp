@@ -7,21 +7,24 @@
 //
 
 #include "LabJackLJMDevice.hpp"
+#include "LabJackLJMDigitalChannel.hpp"
 
 
-BEGIN_NAMESPACE_MW
+BEGIN_NAMESPACE_MW_LABJACK_LJM
 
 
-class LabJackLJMPlugin : public Plugin {
+class Plugin : public mw::Plugin {
     void registerComponents(boost::shared_ptr<ComponentRegistry> registry) override {
-        registry->registerFactory<StandardComponentFactory, LabJackLJMDevice>();
+        registry->registerFactory<StandardComponentFactory, Device>();
+        registry->registerFactory<StandardComponentFactory, DigitalInputChannel>();
+        registry->registerFactory<StandardComponentFactory, DigitalOutputChannel>();
     }
 };
 
 
-extern "C" Plugin * getPlugin() {
-    return new LabJackLJMPlugin();
+extern "C" mw::Plugin * getPlugin() {
+    return new Plugin();
 }
 
 
-END_NAMESPACE_MW
+END_NAMESPACE_MW_LABJACK_LJM
