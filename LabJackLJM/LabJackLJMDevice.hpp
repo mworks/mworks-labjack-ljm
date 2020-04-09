@@ -10,6 +10,7 @@
 #define LabJackLJMDevice_hpp
 
 #include "LabJackLJMDigitalChannel.hpp"
+#include "LabJackLJMDeviceInfo.hpp"
 
 
 BEGIN_NAMESPACE_MW_LABJACK_LJM
@@ -77,6 +78,7 @@ private:
     std::vector<boost::shared_ptr<DigitalOutputChannel>> digitalOutputChannels;
     
     int handle;
+    std::unique_ptr<DeviceInfo> deviceInfo;
     WriteBuffer writeBuffer;
     Stream stream;
     

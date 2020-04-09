@@ -88,6 +88,18 @@ bool Device::initialize() {
         return false;
     }
     
+    int actualDeviceType;
+    if (logError(LJM_GetHandleInfo(handle, &actualDeviceType, nullptr, nullptr, nullptr, nullptr, nullptr),
+                 "Cannot determine type of opened LJM device"))
+    {
+        return false;
+    }
+    deviceInfo = DeviceInfo::getDeviceInfo(actualDeviceType);
+    if (!deviceInfo) {
+        merror(M_IODEVICE_MESSAGE_DOMAIN, "Selected LJM device is not supported (type = %d)", actualDeviceType);
+        return false;
+    }
+    
     writeBuffer.append("IO_CONFIG_SET_CURRENT_TO_FACTORY", 1);
     prepareDigitalInput();
     prepareDigitalOutput();
