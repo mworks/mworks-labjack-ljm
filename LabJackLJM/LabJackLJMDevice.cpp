@@ -57,6 +57,8 @@ Device::Device(const ParameterValueMap &parameters) :
 
 Device::~Device() {
     if (-1 != handle) {
+        writeBuffer.append("LED_COMM", 0);
+        logError(writeBuffer.write(handle), "Cannot turn off LJM device COMM LED");
         logError(LJM_Close(handle), "Cannot close LJM device");
     }
 }
@@ -98,6 +100,10 @@ bool Device::initialize() {
     }
     
     writeBuffer.append("IO_CONFIG_SET_CURRENT_TO_FACTORY", 1);
+    writeBuffer.append("POWER_LED", 4);  // Set LED operation to manual
+    writeBuffer.append("LED_STATUS", 1);
+    writeBuffer.append("LED_COMM", 1);
+    
     prepareDigitalInput();
     prepareDigitalOutput();
     
