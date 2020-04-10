@@ -20,9 +20,11 @@ class DigitalChannel : public SingleLineChannel {
 public:
     explicit DigitalChannel(const ParameterValueMap &parameters);
     
-    int getDIOIndex() const {
-        return (static_cast<int>(getLine()) - static_cast<int>(PhysicalLine::DIO_MIN));
-    }
+    void setDIOIndex(int index) { dioIndex = index; }
+    int getDIOIndex() const { return dioIndex; }
+    
+private:
+    int dioIndex;
     
 };
 

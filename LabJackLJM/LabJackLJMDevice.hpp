@@ -45,7 +45,8 @@ private:
         return convertNameToAddress(name, type);
     }
     
-    void reserveLine(const std::string &lineName, PhysicalLine line);
+    int reserveLine(const std::string &lineName);
+    void validateDigitalChannel(const boost::shared_ptr<DigitalChannel> &channel);
     
     void prepareDigitalInput();
     
@@ -73,12 +74,12 @@ private:
     const MWTime dataInterval;
     const MWTime updateInterval;
     
-    std::set<PhysicalLine> linesInUse;
     std::vector<boost::shared_ptr<DigitalInputChannel>> digitalInputChannels;
     std::vector<boost::shared_ptr<DigitalOutputChannel>> digitalOutputChannels;
     
     int handle;
     std::unique_ptr<DeviceInfo> deviceInfo;
+    std::set<int> linesInUse;
     WriteBuffer writeBuffer;
     Stream stream;
     

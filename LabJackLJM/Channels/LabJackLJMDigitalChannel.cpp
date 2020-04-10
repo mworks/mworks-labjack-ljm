@@ -13,12 +13,9 @@ BEGIN_NAMESPACE_MW_LABJACK_LJM
 
 
 DigitalChannel::DigitalChannel(const ParameterValueMap &parameters) :
-    SingleLineChannel(parameters)
-{
-    if (!isDIO(getLine())) {
-        throw SimpleException(M_IODEVICE_MESSAGE_DOMAIN, boost::format("%s is not a digital line") % getLineName());
-    }
-}
+    SingleLineChannel(parameters),
+    dioIndex(-1)
+{ }
 
 
 void DigitalInputChannel::describeComponent(ComponentInfo &info) {

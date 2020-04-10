@@ -66,16 +66,13 @@ void Device::addChild(std::map<std::string, std::string> parameters,
                       ComponentRegistryPtr reg,
                       boost::shared_ptr<Component> child)
 {
-    if (auto channel = boost::dynamic_pointer_cast<SingleLineChannel>(child)) {
-        reserveLine(channel->getLineName(), channel->getLine());
-        if (auto diChannel = boost::dynamic_pointer_cast<DigitalInputChannel>(channel)) {
-            digitalInputChannels.emplace_back(std::move(diChannel));
-            return;
-        }
-        if (auto doChannel = boost::dynamic_pointer_cast<DigitalOutputChannel>(channel)) {
-            digitalOutputChannels.emplace_back(std::move(doChannel));
-            return;
-        }
+    if (auto channel = boost::dynamic_pointer_cast<DigitalInputChannel>(child)) {
+        digitalInputChannels.emplace_back(std::move(channel));
+        return;
+    }
+    if (auto channel = boost::dynamic_pointer_cast<DigitalOutputChannel>(child)) {
+        digitalOutputChannels.emplace_back(std::move(channel));
+        return;
     }
     throw SimpleException(M_IODEVICE_MESSAGE_DOMAIN, "Invalid channel type for LabJack LJM device");
 }
@@ -154,10 +151,22 @@ int Device::convertNameToAddress(const std::string &name, int &type) {
 }
 
 
-void Device::reserveLine(const std::string &lineName, PhysicalLine line) {
+int Device::reserveLine(const std::string &lineName) {
+    const auto line = deviceInfo->getLineForName(lineName);
     if (!(linesInUse.insert(line).second)) {
         throw SimpleException(M_IODEVICE_MESSAGE_DOMAIN, boost::format("Line %s is already in use") % lineName);
     }
+    return line;
+}
+
+
+void Device::validateDigitalChannel(const boost::shared_ptr<DigitalChannel> &channel) {
+    auto &lineName = channel->getLineName();
+    const auto line = reserveLine(lineName);
+    if (!(deviceInfo->isDIO(line))) {
+        throw SimpleException(M_IODEVICE_MESSAGE_DOMAIN, boost::format("%s is not a digital line") % lineName);
+    }
+    channel->setDIOIndex(deviceInfo->getDIOIndex(line));
 }
 
 
@@ -165,6 +174,7 @@ void Device::prepareDigitalInput() {
     auto dioInhibit = ~std::uint32_t(0);
     
     for (auto &channel : digitalInputChannels) {
+        validateDigitalChannel(channel);
         dioInhibit ^= (1 << channel->getDIOIndex());
     }
     
@@ -181,6 +191,7 @@ void Device::prepareDigitalOutput() {
     boost::weak_ptr<Device> weakThis(component_shared_from_this<Device>());
     
     for (auto &channel : digitalOutputChannels) {
+        validateDigitalChannel(channel);
         int type;
         auto address = convertNameToAddress((boost::format("DIO%d") % channel->getDIOIndex()).str(), type);
         auto callback = [weakThis, address, type](const Datum &data, MWTime time) {
