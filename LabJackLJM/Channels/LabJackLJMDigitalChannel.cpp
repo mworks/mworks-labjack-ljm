@@ -24,9 +24,21 @@ void DigitalInputChannel::describeComponent(ComponentInfo &info) {
 }
 
 
+void DigitalInputChannel::setValue(bool value, MWTime time) const {
+    if (valueVar->getValue().getBool() != value) {
+        valueVar->setValue(Datum(value), time);
+    }
+}
+
+
 void DigitalOutputChannel::describeComponent(ComponentInfo &info) {
     DigitalChannel::describeComponent(info);
     info.setSignature("iochannel/labjack_ljm_digital_output");
+}
+
+
+bool DigitalOutputChannel::getValue() const {
+    return valueVar->getValue().getBool();
 }
 
 

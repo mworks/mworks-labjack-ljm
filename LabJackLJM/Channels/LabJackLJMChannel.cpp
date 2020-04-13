@@ -31,7 +31,7 @@ void SingleLineChannel::describeComponent(ComponentInfo &info) {
 SingleLineChannel::SingleLineChannel(const ParameterValueMap &parameters) :
     Channel(parameters),
     lineName(variableOrText(parameters[LINE])->getValue().getString()),
-    value(parameters[VALUE])
+    valueVar(parameters[VALUE])
 { }
 
 

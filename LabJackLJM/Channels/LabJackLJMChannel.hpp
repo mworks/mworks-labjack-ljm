@@ -34,11 +34,10 @@ public:
     explicit SingleLineChannel(const ParameterValueMap &parameters);
     
     const std::string & getLineName() const { return lineName; }
-    const VariablePtr & getValueVariable() const { return value; }
     
-private:
+protected:
     const std::string lineName;
-    const VariablePtr value;
+    const VariablePtr valueVar;
     
 };
 

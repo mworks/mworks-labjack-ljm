@@ -36,6 +36,8 @@ public:
     
     using DigitalChannel::DigitalChannel;
     
+    void setValue(bool value, MWTime time) const;
+    
 };
 
 
@@ -45,6 +47,12 @@ public:
     static void describeComponent(ComponentInfo &info);
     
     using DigitalChannel::DigitalChannel;
+    
+    void addNewValueNotification(const boost::shared_ptr<VariableNotification> &notification) const {
+        valueVar->addNotification(notification);
+    }
+    
+    bool getValue() const;
     
 };
 

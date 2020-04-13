@@ -56,20 +56,40 @@ private:
     void updateDigitalOutputs(bool active = false);
     
     bool haveInputs() const { return (haveDigitalInputs()); }
+    void startReadInputsTask();
+    void stopReadInputsTask();
+    void readInputs();
     
     struct WriteBuffer {
         void append(const std::string &name, double value);
         int write(int handle);
     private:
+        std::vector<std::string> names;
         std::vector<int> addresses;
         std::vector<int> types;
         std::vector<double> values;
     };
     
     struct Stream {
+        struct DataReader {
+            explicit DataReader(const std::vector<double> &data) : iter(data.begin()), end(data.end()) { }
+            template<typename T> T get();
+            explicit operator bool() const noexcept { return (iter != end); }
+        private:
+            double next() { return *(iter++); }
+            using Iter = std::vector<double>::const_iterator;
+            Iter iter;
+            const Iter end;
+        };
         void add(const std::string &name);
+        int start(int handle, MWTime dataInterval, MWTime updateInterval);
+        int read(int handle);
+        int stop(int handle);
+        DataReader getData() const { return DataReader(data); }
     private:
         std::vector<int> addresses;
+        int scansPerRead = 0;
+        std::vector<double> data;
     };
     
     const std::string deviceType;
@@ -77,6 +97,8 @@ private:
     const std::string identifier;
     const MWTime dataInterval;
     const MWTime updateInterval;
+    
+    const boost::shared_ptr<Clock> clock;
     
     std::vector<boost::shared_ptr<DigitalInputChannel>> digitalInputChannels;
     std::vector<boost::shared_ptr<DigitalOutputChannel>> digitalOutputChannels;
@@ -86,6 +108,8 @@ private:
     std::set<int> linesInUse;
     WriteBuffer writeBuffer;
     Stream stream;
+    
+    boost::shared_ptr<ScheduleTask> readInputsTask;
     
     using lock_guard = std::lock_guard<std::mutex>;
     lock_guard::mutex_type mutex;
