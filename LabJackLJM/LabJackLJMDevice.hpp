@@ -48,10 +48,14 @@ private:
     int reserveLine(const std::string &lineName);
     void validateDigitalChannel(const boost::shared_ptr<DigitalChannel> &channel);
     
-    void prepareDigitalInput();
+    bool haveDigitalInputs() const { return !(digitalInputChannels.empty()); }
+    void prepareDigitalInputs();
     
-    void prepareDigitalOutput();
-    void updateDigitalOutput(bool active = false);
+    bool haveDigitalOutputs() const { return !(digitalOutputChannels.empty()); }
+    void prepareDigitalOutputs();
+    void updateDigitalOutputs(bool active = false);
+    
+    bool haveInputs() const { return (haveDigitalInputs()); }
     
     struct WriteBuffer {
         void append(const std::string &name, double value);

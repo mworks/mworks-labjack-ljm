@@ -104,8 +104,12 @@ bool Device::initialize() {
     writeBuffer.append("LED_STATUS", 1);
     writeBuffer.append("LED_COMM", 1);
     
-    prepareDigitalInput();
-    prepareDigitalOutput();
+    if (haveDigitalInputs()) {
+        prepareDigitalInputs();
+    }
+    if (haveDigitalOutputs()) {
+        prepareDigitalOutputs();
+    }
     
     if (logError(writeBuffer.write(handle), "Cannot configure LJM device")) {
         return false;
@@ -119,7 +123,9 @@ bool Device::startDeviceIO() {
     lock_guard lock(mutex);
     
     if (!running) {
-        updateDigitalOutput(true);
+        if (haveDigitalOutputs()) {
+            updateDigitalOutputs(true);
+        }
         
         if (logError(writeBuffer.write(handle), "Cannot start LJM device")) {
             return false;
@@ -136,7 +142,9 @@ bool Device::stopDeviceIO() {
     lock_guard lock(mutex);
     
     if (running) {
-        updateDigitalOutput();
+        if (haveDigitalOutputs()) {
+            updateDigitalOutputs();
+        }
         
         if (logError(writeBuffer.write(handle), "Cannot stop LJM device")) {
             return false;
@@ -176,7 +184,7 @@ void Device::validateDigitalChannel(const boost::shared_ptr<DigitalChannel> &cha
 }
 
 
-void Device::prepareDigitalInput() {
+void Device::prepareDigitalInputs() {
     auto dioInhibit = ~std::uint32_t(0);
     
     for (auto &channel : digitalInputChannels) {
@@ -184,16 +192,14 @@ void Device::prepareDigitalInput() {
         dioInhibit ^= (1 << channel->getDIOIndex());
     }
     
-    if (~dioInhibit) {
-        writeBuffer.append("DIO_INHIBIT", dioInhibit);
-        writeBuffer.append("DIO_DIRECTION", 0);
-        stream.add("FIO_EIO_STATE");
-        stream.add("CIO_MIO_STATE");
-    }
+    writeBuffer.append("DIO_INHIBIT", dioInhibit);
+    writeBuffer.append("DIO_DIRECTION", 0);
+    stream.add("FIO_EIO_STATE");
+    stream.add("CIO_MIO_STATE");
 }
 
 
-void Device::prepareDigitalOutput() {
+void Device::prepareDigitalOutputs() {
     boost::weak_ptr<Device> weakThis(component_shared_from_this<Device>());
     
     for (auto &channel : digitalOutputChannels) {
@@ -212,11 +218,11 @@ void Device::prepareDigitalOutput() {
         channel->getValueVariable()->addNotification(boost::make_shared<VariableCallbackNotification>(callback));
     }
     
-    updateDigitalOutput();
+    updateDigitalOutputs();
 }
 
 
-void Device::updateDigitalOutput(bool active) {
+void Device::updateDigitalOutputs(bool active) {
     auto dioInhibit = ~std::uint32_t(0);
     auto dioDirection = std::uint32_t(0);
     auto dioState = std::uint32_t(0);
@@ -230,11 +236,9 @@ void Device::updateDigitalOutput(bool active) {
         }
     }
     
-    if (~dioInhibit) {
-        writeBuffer.append("DIO_INHIBIT", dioInhibit);
-        writeBuffer.append("DIO_DIRECTION", dioDirection);
-        writeBuffer.append("DIO_STATE", dioState);
-    }
+    writeBuffer.append("DIO_INHIBIT", dioInhibit);
+    writeBuffer.append("DIO_DIRECTION", dioDirection);
+    writeBuffer.append("DIO_STATE", dioState);
 }
 
 
