@@ -24,6 +24,7 @@ public:
     static const std::string IDENTIFIER;
     static const std::string DATA_INTERVAL;
     static const std::string UPDATE_INTERVAL;
+    static const std::string CLOCK_OFFSET_NANOS;
     
     static void describeComponent(ComponentInfo &info);
     
@@ -39,10 +40,20 @@ public:
     bool stopDeviceIO() override;
     
 private:
+    using CoreTimerValue = std::uint32_t;
+    
+    // Core timer runs at half core speed (80Mhz / 2 == 40Mhz), so nanos per tick is 1e9 / 40e6 == 25
+    static constexpr MWTime coreTimerNanosPerTick = 25;
+    static constexpr MWTime clockSyncUpdateInterval = 1000000;  // One second
+    
     static int convertNameToAddress(const std::string &name, int &type);
     static int convertNameToAddress(const std::string &name) {
         int type;
         return convertNameToAddress(name, type);
+    }
+    
+    static constexpr MWTime coreTimerTicksToNanos(CoreTimerValue coreTimer) {
+        return MWTime(coreTimer) * coreTimerNanosPerTick;
     }
     
     int reserveLine(const std::string &lineName);
@@ -56,14 +67,17 @@ private:
     void updateDigitalOutputs(bool active = false);
     
     bool haveInputs() const { return (haveDigitalInputs()); }
-    void startReadInputsTask();
-    void stopReadInputsTask();
     void readInputs();
     
+    void updateClockSync(MWTime currentTime);
+    MWTime applyClockOffset(CoreTimerValue coreTimer, MWTime currentTime) const;
+    
     struct WriteBuffer {
+        explicit WriteBuffer(int &handle) : handle(handle) { }
         void append(const std::string &name, double value);
-        int write(int handle);
+        int write();
     private:
+        int &handle;
         std::vector<std::string> names;
         std::vector<int> addresses;
         std::vector<int> types;
@@ -81,12 +95,15 @@ private:
             Iter iter;
             const Iter end;
         };
+        explicit Stream(Device &device) : device(device) { }
         void add(const std::string &name);
-        int start(int handle, MWTime dataInterval, MWTime updateInterval);
-        int read(int handle);
-        int stop(int handle);
+        bool start();
+        bool read();
+        bool stop();
         DataReader getData() const { return DataReader(data); }
     private:
+        static void callback(void *_device);
+        Device &device;
         std::vector<int> addresses;
         int scansPerRead = 0;
         std::vector<double> data;
@@ -97,6 +114,7 @@ private:
     const std::string identifier;
     const MWTime dataInterval;
     const MWTime updateInterval;
+    const VariablePtr clockOffsetNanosVar;
     
     const boost::shared_ptr<Clock> clock;
     
@@ -109,7 +127,9 @@ private:
     WriteBuffer writeBuffer;
     Stream stream;
     
-    boost::shared_ptr<ScheduleTask> readInputsTask;
+    MWTime currentClockOffsetNanos;
+    MWTime coreTimerNanosAtLastClockSync;
+    MWTime lastClockSyncUpdateTime;
     
     using lock_guard = std::lock_guard<std::mutex>;
     lock_guard::mutex_type mutex;

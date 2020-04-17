@@ -23,6 +23,7 @@ const std::string Device::CONNECTION_TYPE("connection_type");
 const std::string Device::IDENTIFIER("identifier");
 const std::string Device::DATA_INTERVAL("data_interval");
 const std::string Device::UPDATE_INTERVAL("update_interval");
+const std::string Device::CLOCK_OFFSET_NANOS("clock_offset_nanos");
 
 
 void Device::describeComponent(ComponentInfo &info) {
@@ -35,6 +36,7 @@ void Device::describeComponent(ComponentInfo &info) {
     info.addParameter(IDENTIFIER, "ANY");
     info.addParameter(DATA_INTERVAL);
     info.addParameter(UPDATE_INTERVAL);
+    info.addParameter(CLOCK_OFFSET_NANOS, false);
 }
 
 
@@ -45,8 +47,14 @@ Device::Device(const ParameterValueMap &parameters) :
     identifier(variableOrText(parameters[IDENTIFIER])->getValue().getString()),
     dataInterval(parameters[DATA_INTERVAL]),
     updateInterval(parameters[UPDATE_INTERVAL]),
+    clockOffsetNanosVar(optionalVariable(parameters[CLOCK_OFFSET_NANOS])),
     clock(Clock::instance()),
     handle(-1),
+    writeBuffer(handle),
+    stream(*this),
+    currentClockOffsetNanos(0),
+    coreTimerNanosAtLastClockSync(0),
+    lastClockSyncUpdateTime(0),
     running(false)
 {
     if (dataInterval <= 0) {
@@ -65,7 +73,7 @@ Device::Device(const ParameterValueMap &parameters) :
 Device::~Device() {
     if (-1 != handle) {
         writeBuffer.append("LED_COMM", 0);
-        logError(writeBuffer.write(handle), "Cannot turn off LJM device COMM LED");
+        logError(writeBuffer.write(), "Cannot turn off LJM device COMM LED");
         logError(LJM_Close(handle), "Cannot close LJM device");
     }
 }
@@ -112,11 +120,6 @@ bool Device::initialize() {
     writeBuffer.append("LED_COMM", 1);
     
     if (haveInputs()) {
-        if (logError(LJM_WriteLibraryConfigS(LJM_STREAM_SCANS_RETURN, LJM_STREAM_SCANS_RETURN_ALL_OR_NONE),
-                     "Cannot make LJM stream reads non-blocking"))
-        {
-            return false;
-        }
         stream.add("CORE_TIMER");
         stream.add("STREAM_DATA_CAPTURE_16");  // CORE_TIMER is a 32-bit value
     }
@@ -127,7 +130,7 @@ bool Device::initialize() {
         prepareDigitalOutputs();
     }
     
-    if (logError(writeBuffer.write(handle), "Cannot configure LJM device")) {
+    if (logError(writeBuffer.write(), "Cannot configure LJM device")) {
         return false;
     }
     
@@ -143,16 +146,16 @@ bool Device::startDeviceIO() {
             updateDigitalOutputs(true);
         }
         
-        if (logError(writeBuffer.write(handle), "Cannot start LJM device")) {
+        if (logError(writeBuffer.write(), "Cannot start LJM device")) {
             return false;
         }
         
+        const auto currentTime = clock->getCurrentTimeUS();
+        
         if (haveInputs()) {
-            if (logError(stream.start(handle, dataInterval, updateInterval), "Cannot start LJM input stream")) {
+            updateClockSync(currentTime);
+            if (!stream.start()) {
                 return false;
-            }
-            if (!readInputsTask) {
-                startReadInputsTask();
             }
         }
         
@@ -168,10 +171,7 @@ bool Device::stopDeviceIO() {
     
     if (running) {
         if (haveInputs()) {
-            if (readInputsTask) {
-                stopReadInputsTask();
-            }
-            if (logError(stream.stop(handle), "Cannot stop LJM input stream")) {
+            if (!stream.stop()) {
                 return false;
             }
         }
@@ -180,7 +180,7 @@ bool Device::stopDeviceIO() {
             updateDigitalOutputs();
         }
         
-        if (logError(writeBuffer.write(handle), "Cannot stop LJM device")) {
+        if (logError(writeBuffer.write(), "Cannot stop LJM device")) {
             return false;
         }
         
@@ -279,59 +279,77 @@ void Device::updateDigitalOutputs(bool active) {
 }
 
 
-void Device::startReadInputsTask() {
-    boost::weak_ptr<Device> weakThis(component_shared_from_this<Device>());
-    auto action = [weakThis]() {
-        if (auto sharedThis = weakThis.lock()) {
-            lock_guard lock(sharedThis->mutex);
-            sharedThis->readInputs();
-        }
-        return nullptr;
-    };
-    readInputsTask = Scheduler::instance()->scheduleUS(FILELINE,
-                                                       updateInterval,
-                                                       updateInterval,
-                                                       M_REPEAT_INDEFINITELY,
-                                                       action,
-                                                       M_DEFAULT_IODEVICE_PRIORITY,
-                                                       M_DEFAULT_IODEVICE_WARN_SLOP_US,
-                                                       M_DEFAULT_IODEVICE_FAIL_SLOP_US,
-                                                       M_MISSED_EXECUTION_DROP);
-}
-
-
-void Device::stopReadInputsTask() {
-    readInputsTask->cancel();
-    readInputsTask.reset();
-}
-
-
 void Device::readInputs() {
-    if (!readInputsTask) {
-        // If we've already been canceled, don't try to read more data
+    if (!stream.read()) {
         return;
     }
     
-    while (true) {
-        auto result = stream.read(handle);
-        if (LJME_NO_SCANS_RETURNED == result ||
-            logError(result, "LJM stream read failed"))
-        {
-            break;
-        }
-        
-        auto data = stream.getData();
-        do {
-            const auto coreTimer = data.get<std::uint32_t>();
-            const auto currentTime = clock->getCurrentTimeUS();  // FIXME: get from coreTimer!
-            if (haveDigitalInputs()) {
-                const auto dioState = data.get<std::uint32_t>();
-                for (auto &channel : digitalInputChannels) {
-                    channel->setValue(bool(dioState & (1 << channel->getDIOIndex())), currentTime);
-                }
+    const auto currentTime = clock->getCurrentTimeUS();
+    auto data = stream.getData();
+    
+    do {
+        const auto coreTimer = data.get<CoreTimerValue>();
+        const auto scanTime = applyClockOffset(coreTimer, currentTime);
+        if (haveDigitalInputs()) {
+            const auto dioState = data.get<std::uint32_t>();
+            for (auto &channel : digitalInputChannels) {
+                channel->setValue(bool(dioState & (1 << channel->getDIOIndex())), scanTime);
             }
-        } while (data);
+        }
+    } while (data);
+    
+    if (currentTime - lastClockSyncUpdateTime >= clockSyncUpdateInterval) {
+        updateClockSync(currentTime);
     }
+}
+
+
+void Device::updateClockSync(MWTime currentTime) {
+    // Reset stored clock offset to zero, so that we know not to use it if the
+    // update fails
+    currentClockOffsetNanos = 0;
+    
+    std::array<std::tuple<MWTime, MWTime, CoreTimerValue>, 5> samples;
+    int type;
+    auto address = convertNameToAddress("CORE_TIMER", type);
+    double value;
+    
+    for (auto &sample : samples) {
+        auto beforeNS = clock->getCurrentTimeNS();
+        auto result = LJM_eReadAddress(handle, address, type, &value);
+        auto afterNS = clock->getCurrentTimeNS();
+        if (logError(result, "Cannot read LJM device system timer")) {
+            return;
+        }
+        sample = std::make_tuple(beforeNS, afterNS - beforeNS, CoreTimerValue(value));
+    }
+    
+    // Sort by afterNS-beforeNS and extract median (to exclude outliers)
+    std::sort(samples.begin(), samples.end(), [](const auto &first, const auto &second) {
+        return std::get<1>(first) < std::get<1>(second);
+    });
+    const auto &median = samples.at(samples.size() / 2);
+    
+    coreTimerNanosAtLastClockSync = coreTimerTicksToNanos(std::get<2>(median));
+    currentClockOffsetNanos = (std::get<0>(median) + std::get<1>(median) / 2) - coreTimerNanosAtLastClockSync;
+    if (clockOffsetNanosVar) {
+        clockOffsetNanosVar->setValue(Datum(currentClockOffsetNanos));
+    }
+    
+    lastClockSyncUpdateTime = currentTime;
+}
+
+
+MWTime Device::applyClockOffset(CoreTimerValue coreTimer, MWTime currentTime) const {
+    if (0 == currentClockOffsetNanos) {
+        return currentTime;
+    }
+    auto coreTimerNanos = coreTimerTicksToNanos(coreTimer);
+    if (coreTimerNanos < coreTimerNanosAtLastClockSync) {
+        // Core timer wrapped
+        coreTimerNanos += coreTimerTicksToNanos(std::numeric_limits<CoreTimerValue>::max());
+    }
+    return (coreTimerNanos + currentClockOffsetNanos) / 1000;  // ns to us
 }
 
 
@@ -345,7 +363,7 @@ void Device::WriteBuffer::append(const std::string &name, double value) {
 }
 
 
-int Device::WriteBuffer::write(int handle) {
+int Device::WriteBuffer::write() {
     if (addresses.empty()) {
         return LJME_NOERROR;
     }
@@ -375,20 +393,23 @@ void Device::Stream::add(const std::string &name) {
 }
 
 
-int Device::Stream::start(int handle, MWTime dataInterval, MWTime updateInterval) {
-    scansPerRead = updateInterval / dataInterval;
+bool Device::Stream::start() {
+    scansPerRead = device.updateInterval / device.dataInterval;
     const auto numAddresses = addresses.size();
     data.resize(numAddresses * scansPerRead);
     
-    const auto desiredScanRate = 1e6 * double(scansPerRead) / double(updateInterval);  // scans per second
+    const auto desiredScanRate = 1e6 * double(scansPerRead) / double(device.updateInterval);  // scans per second
     auto actualScanRate = desiredScanRate;
     
-    auto result = LJM_eStreamStart(handle,
-                                   scansPerRead,
-                                   numAddresses,
-                                   addresses.data(),
-                                   &actualScanRate);
-    if ((LJME_NOERROR == result) && (actualScanRate != desiredScanRate)) {
+    if (logError(LJM_eStreamStart(device.handle, scansPerRead, numAddresses, addresses.data(), &actualScanRate),
+                 "Cannot start LJM input stream") ||
+        logError(LJM_SetStreamCallback(device.handle, callback, &device),
+                 "Cannot set LJM input stream callback"))
+    {
+        return false;
+    }
+    
+    if (actualScanRate != desiredScanRate) {
         mwarning(M_IODEVICE_MESSAGE_DOMAIN,
                  "LJM device cannot scan inputs at desired rate: "
                  "requested %g scans/second, got %g scans/second",
@@ -396,29 +417,44 @@ int Device::Stream::start(int handle, MWTime dataInterval, MWTime updateInterval
                  actualScanRate);
     }
     
-    return result;
+    return true;
 }
 
 
-int Device::Stream::read(int handle) {
+bool Device::Stream::read() {
     int deviceScanBacklog = 0;
     int ljmScanBacklog = 0;
-    auto result = LJM_eStreamRead(handle, data.data(), &deviceScanBacklog, &ljmScanBacklog);
-    if (LJME_NOERROR == result) {
-        // Warn if there's more than one read's worth of scans in either buffer's backlog
-        if (deviceScanBacklog > scansPerRead) {
-            mwarning(M_IODEVICE_MESSAGE_DOMAIN, "LJM device buffer contains %d unread input scans", deviceScanBacklog);
-        }
-        if (ljmScanBacklog > scansPerRead) {
-            mwarning(M_IODEVICE_MESSAGE_DOMAIN, "LJM library buffer contains %d unread input scans", ljmScanBacklog);
-        }
+    
+    if (logError(LJM_eStreamRead(device.handle, data.data(), &deviceScanBacklog, &ljmScanBacklog),
+                 "LJM stream read failed"))
+    {
+        return false;
     }
-    return result;
+    
+    // Warn if there's more than one read's worth of scans in either buffer's backlog
+    if (deviceScanBacklog > scansPerRead) {
+        mwarning(M_IODEVICE_MESSAGE_DOMAIN, "LJM device buffer contains %d unread input scans", deviceScanBacklog);
+    }
+    if (ljmScanBacklog > scansPerRead) {
+        mwarning(M_IODEVICE_MESSAGE_DOMAIN, "LJM library buffer contains %d unread input scans", ljmScanBacklog);
+    }
+    
+    return true;
 }
 
 
-int Device::Stream::stop(int handle) {
-    return LJM_eStreamStop(handle);
+bool Device::Stream::stop() {
+    if (logError(LJM_eStreamStop(device.handle), "Cannot stop LJM input stream")) {
+        return false;
+    }
+    return true;
+}
+
+
+void Device::Stream::callback(void *_device) {
+    auto &device = *static_cast<Device *>(_device);
+    lock_guard lock(device.mutex);
+    device.readInputs();
 }
 
 
