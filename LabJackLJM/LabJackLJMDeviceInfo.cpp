@@ -114,28 +114,16 @@ class T7DeviceInfo : public DeviceInfo {
         return isInRange<PhysicalLine::AIN_MIN, PhysicalLine::AIN_MAX>(line);
     }
     
-    bool isFIO(int line) const override {
-        return isInRange<PhysicalLine::FIO_MIN, PhysicalLine::FIO_MAX>(line);
-    }
-    
-    bool isEIO(int line) const override {
-        return isInRange<PhysicalLine::EIO_MIN, PhysicalLine::EIO_MAX>(line);
-    }
-    
-    bool isCIO(int line) const override {
-        return isInRange<PhysicalLine::CIO_MIN, PhysicalLine::CIO_MAX>(line);
-    }
-    
-    bool isMIO(int line) const override {
-        return isInRange<PhysicalLine::MIO_MIN, PhysicalLine::MIO_MAX>(line);
-    }
-    
     bool isDIO(int line) const override {
         return isInRange<PhysicalLine::DIO_MIN, PhysicalLine::DIO_MAX>(line);
     }
     
     int getDIOIndex(int line) const override {
         return (line - static_cast<int>(PhysicalLine::DIO0));
+    }
+    
+    bool hasFlexibleIO() const override {
+        return false;
     }
     
     bool parseLineName(const std::string &name, int &line) const override;
@@ -226,28 +214,16 @@ class T4DeviceInfo : public DeviceInfo {
         return isInRange<PhysicalLine::AIN_MIN, PhysicalLine::AIN_MAX>(line);
     }
     
-    bool isFIO(int line) const override {
-        return isInRange<PhysicalLine::FIO_MIN, PhysicalLine::FIO_MAX>(line);
-    }
-    
-    bool isEIO(int line) const override {
-        return isInRange<PhysicalLine::EIO_MIN, PhysicalLine::EIO_MAX>(line);
-    }
-    
-    bool isCIO(int line) const override {
-        return isInRange<PhysicalLine::CIO_MIN, PhysicalLine::CIO_MAX>(line);
-    }
-    
-    bool isMIO(int line) const override {
-        return false;  // No MIO on T4
-    }
-    
     bool isDIO(int line) const override {
         return isInRange<PhysicalLine::DIO_MIN, PhysicalLine::DIO_MAX>(line);
     }
     
     int getDIOIndex(int line) const override {
         return (line - static_cast<int>(PhysicalLine::DIO4) + 4);  // No DIO0-3 on T4
+    }
+    
+    bool hasFlexibleIO() const override {
+        return true;
     }
     
     bool parseLineName(const std::string &name, int &line) const override;

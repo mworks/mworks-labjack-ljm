@@ -26,13 +26,11 @@ public:
     
     virtual bool isDAC(int line) const = 0;
     virtual bool isAIN(int line) const = 0;
-    virtual bool isFIO(int line) const = 0;
-    virtual bool isEIO(int line) const = 0;
-    virtual bool isCIO(int line) const = 0;
-    virtual bool isMIO(int line) const = 0;
     virtual bool isDIO(int line) const = 0;
     
     virtual int getDIOIndex(int line) const = 0;
+    
+    virtual bool hasFlexibleIO() const = 0;
     
 private:
     virtual bool parseLineName(const std::string &name, int &line) const = 0;

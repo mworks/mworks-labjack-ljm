@@ -227,6 +227,9 @@ void Device::prepareDigitalInputs() {
     }
     
     writeBuffer.append("DIO_INHIBIT", dioInhibit);
+    if (deviceInfo->hasFlexibleIO()) {
+        writeBuffer.append("DIO_ANALOG_ENABLE", 0);
+    }
     writeBuffer.append("DIO_DIRECTION", 0);
     
     stream.add("FIO_EIO_STATE");
@@ -274,6 +277,9 @@ void Device::updateDigitalOutputs(bool active) {
     }
     
     writeBuffer.append("DIO_INHIBIT", dioInhibit);
+    if (deviceInfo->hasFlexibleIO()) {
+        writeBuffer.append("DIO_ANALOG_ENABLE", 0);
+    }
     writeBuffer.append("DIO_DIRECTION", dioDirection);
     writeBuffer.append("DIO_STATE", dioState);
 }
