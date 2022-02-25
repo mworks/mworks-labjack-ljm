@@ -313,6 +313,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = E1E7C70A2385C67000F37E3E /* macOS_Plugin.xcconfig */;
 			buildSettings = {
+				ARCHS = x86_64;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "LabJackLJM/LabJackLJM-Prefix.pch";
 				HEADER_SEARCH_PATHS = (
