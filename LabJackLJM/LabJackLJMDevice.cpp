@@ -13,8 +13,22 @@ BEGIN_NAMESPACE_MW_LABJACK_LJM
 
 
 template<>
+inline std::uint16_t Device::Stream::DataReader::get() {
+    return std::uint16_t(next());
+}
+
+
+template<>
 inline std::uint32_t Device::Stream::DataReader::get() {
-    return std::uint32_t(next()) | (std::uint32_t(next()) << 16);
+    auto lsw = std::uint32_t(next());
+    auto msw = std::uint32_t(next());
+    return lsw | (msw << 16);
+}
+
+
+template<>
+inline double Device::Stream::DataReader::get() {
+    return next();
 }
 
 
