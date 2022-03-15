@@ -37,7 +37,6 @@ const std::string Device::CONNECTION_TYPE("connection_type");
 const std::string Device::IDENTIFIER("identifier");
 const std::string Device::DATA_INTERVAL("data_interval");
 const std::string Device::UPDATE_INTERVAL("update_interval");
-const std::string Device::CLOCK_OFFSET_NANOS("clock_offset_nanos");
 
 
 void Device::describeComponent(ComponentInfo &info) {
@@ -50,7 +49,6 @@ void Device::describeComponent(ComponentInfo &info) {
     info.addParameter(IDENTIFIER, "ANY");
     info.addParameter(DATA_INTERVAL);
     info.addParameter(UPDATE_INTERVAL);
-    info.addParameter(CLOCK_OFFSET_NANOS, false);
 }
 
 
@@ -61,14 +59,10 @@ Device::Device(const ParameterValueMap &parameters) :
     identifier(variableOrText(parameters[IDENTIFIER])->getValue().getString()),
     dataInterval(parameters[DATA_INTERVAL]),
     updateInterval(parameters[UPDATE_INTERVAL]),
-    clockOffsetNanosVar(optionalVariable(parameters[CLOCK_OFFSET_NANOS])),
     clock(Clock::instance()),
     handle(-1),
     writeBuffer(handle),
     stream(*this),
-    currentClockOffsetNanos(0),
-    coreTimerNanosAtLastClockSync(0),
-    lastClockSyncUpdateTime(0),
     running(false)
 {
     if (dataInterval <= 0) {
@@ -133,10 +127,6 @@ bool Device::initialize() {
     writeBuffer.append("LED_STATUS", 1);
     writeBuffer.append("LED_COMM", 1);
     
-    if (haveInputs()) {
-        stream.add("CORE_TIMER");
-        stream.add("STREAM_DATA_CAPTURE_16");  // CORE_TIMER is a 32-bit value
-    }
     if (haveDigitalInputs()) {
         prepareDigitalInputs();
     }
@@ -164,10 +154,7 @@ bool Device::startDeviceIO() {
             return false;
         }
         
-        const auto currentTime = clock->getCurrentTimeUS();
-        
         if (haveInputs()) {
-            updateClockSync(currentTime);
             if (!stream.start()) {
                 return false;
             }
@@ -308,68 +295,13 @@ void Device::readInputs() {
     auto data = stream.getData();
     
     do {
-        const auto coreTimer = data.get<CoreTimerValue>();
-        const auto scanTime = applyClockOffset(coreTimer, currentTime);
         if (haveDigitalInputs()) {
             const auto dioState = data.get<std::uint32_t>();
             for (auto &channel : digitalInputChannels) {
-                channel->setValue(bool(dioState & (1 << channel->getDIOIndex())), scanTime);
+                channel->setValue(bool(dioState & (1 << channel->getDIOIndex())), currentTime);
             }
         }
     } while (data);
-    
-    if (currentTime - lastClockSyncUpdateTime >= clockSyncUpdateInterval) {
-        updateClockSync(currentTime);
-    }
-}
-
-
-void Device::updateClockSync(MWTime currentTime) {
-    // Reset stored clock offset to zero, so that we know not to use it if the
-    // update fails
-    currentClockOffsetNanos = 0;
-    
-    std::array<std::tuple<MWTime, MWTime, CoreTimerValue>, 5> samples;
-    int type;
-    auto address = convertNameToAddress("CORE_TIMER", type);
-    double value;
-    
-    for (auto &sample : samples) {
-        auto beforeNS = clock->getCurrentTimeNS();
-        auto result = LJM_eReadAddress(handle, address, type, &value);
-        auto afterNS = clock->getCurrentTimeNS();
-        if (logError(result, "Cannot read LJM device system timer")) {
-            return;
-        }
-        sample = std::make_tuple(beforeNS, afterNS - beforeNS, CoreTimerValue(value));
-    }
-    
-    // Sort by afterNS-beforeNS and extract median (to exclude outliers)
-    std::sort(samples.begin(), samples.end(), [](const auto &first, const auto &second) {
-        return std::get<1>(first) < std::get<1>(second);
-    });
-    const auto &median = samples.at(samples.size() / 2);
-    
-    coreTimerNanosAtLastClockSync = coreTimerTicksToNanos(std::get<2>(median));
-    currentClockOffsetNanos = (std::get<0>(median) + std::get<1>(median) / 2) - coreTimerNanosAtLastClockSync;
-    if (clockOffsetNanosVar) {
-        clockOffsetNanosVar->setValue(Datum(currentClockOffsetNanos));
-    }
-    
-    lastClockSyncUpdateTime = currentTime;
-}
-
-
-MWTime Device::applyClockOffset(CoreTimerValue coreTimer, MWTime currentTime) const {
-    if (0 == currentClockOffsetNanos) {
-        return currentTime;
-    }
-    auto coreTimerNanos = coreTimerTicksToNanos(coreTimer);
-    if (coreTimerNanos < coreTimerNanosAtLastClockSync) {
-        // Core timer wrapped
-        coreTimerNanos += coreTimerTicksToNanos(std::numeric_limits<CoreTimerValue>::max());
-    }
-    return (coreTimerNanos + currentClockOffsetNanos) / 1000;  // ns to us
 }
 
 

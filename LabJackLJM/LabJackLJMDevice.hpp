@@ -24,7 +24,6 @@ public:
     static const std::string IDENTIFIER;
     static const std::string DATA_INTERVAL;
     static const std::string UPDATE_INTERVAL;
-    static const std::string CLOCK_OFFSET_NANOS;
     
     static void describeComponent(ComponentInfo &info);
     
@@ -40,20 +39,10 @@ public:
     bool stopDeviceIO() override;
     
 private:
-    using CoreTimerValue = std::uint32_t;
-    
-    // Core timer runs at half core speed (80Mhz / 2 == 40Mhz), so nanos per tick is 1e9 / 40e6 == 25
-    static constexpr MWTime coreTimerNanosPerTick = 25;
-    static constexpr MWTime clockSyncUpdateInterval = 1000000;  // One second
-    
     static int convertNameToAddress(const std::string &name, int &type);
     static int convertNameToAddress(const std::string &name) {
         int type;
         return convertNameToAddress(name, type);
-    }
-    
-    static constexpr MWTime coreTimerTicksToNanos(CoreTimerValue coreTimer) {
-        return MWTime(coreTimer) * coreTimerNanosPerTick;
     }
     
     int reserveLine(const std::string &lineName);
@@ -68,9 +57,6 @@ private:
     
     bool haveInputs() const { return (haveDigitalInputs()); }
     void readInputs();
-    
-    void updateClockSync(MWTime currentTime);
-    MWTime applyClockOffset(CoreTimerValue coreTimer, MWTime currentTime) const;
     
     struct WriteBuffer {
         explicit WriteBuffer(int &handle) : handle(handle) { }
@@ -114,7 +100,6 @@ private:
     const std::string identifier;
     const MWTime dataInterval;
     const MWTime updateInterval;
-    const VariablePtr clockOffsetNanosVar;
     
     const boost::shared_ptr<Clock> clock;
     
@@ -126,10 +111,6 @@ private:
     std::set<int> linesInUse;
     WriteBuffer writeBuffer;
     Stream stream;
-    
-    MWTime currentClockOffsetNanos;
-    MWTime coreTimerNanosAtLastClockSync;
-    MWTime lastClockSyncUpdateTime;
     
     using lock_guard = std::lock_guard<std::mutex>;
     lock_guard::mutex_type mutex;
