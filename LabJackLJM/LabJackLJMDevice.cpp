@@ -12,30 +12,9 @@
 BEGIN_NAMESPACE_MW_LABJACK_LJM
 
 
-template<>
-inline std::uint16_t Device::Stream::DataReader::get() {
-    return std::uint16_t(next());
-}
-
-
-template<>
-inline std::uint32_t Device::Stream::DataReader::get() {
-    auto lsw = std::uint32_t(next());
-    auto msw = std::uint32_t(next());
-    return lsw | (msw << 16);
-}
-
-
-template<>
-inline double Device::Stream::DataReader::get() {
-    return next();
-}
-
-
 const std::string Device::DEVICE_TYPE("device_type");
 const std::string Device::CONNECTION_TYPE("connection_type");
 const std::string Device::IDENTIFIER("identifier");
-const std::string Device::DATA_INTERVAL("data_interval");
 const std::string Device::UPDATE_INTERVAL("update_interval");
 
 
@@ -47,7 +26,6 @@ void Device::describeComponent(ComponentInfo &info) {
     info.addParameter(DEVICE_TYPE, "ANY");
     info.addParameter(CONNECTION_TYPE, "ANY");
     info.addParameter(IDENTIFIER, "ANY");
-    info.addParameter(DATA_INTERVAL);
     info.addParameter(UPDATE_INTERVAL);
 }
 
@@ -57,31 +35,20 @@ Device::Device(const ParameterValueMap &parameters) :
     deviceType(variableOrText(parameters[DEVICE_TYPE])->getValue().getString()),
     connectionType(variableOrText(parameters[CONNECTION_TYPE])->getValue().getString()),
     identifier(variableOrText(parameters[IDENTIFIER])->getValue().getString()),
-    dataInterval(parameters[DATA_INTERVAL]),
     updateInterval(parameters[UPDATE_INTERVAL]),
     clock(Clock::instance()),
     handle(-1),
-    writeBuffer(handle),
-    stream(*this),
     running(false)
 {
-    if (dataInterval <= 0) {
-        throw SimpleException(M_IODEVICE_MESSAGE_DOMAIN, "Invalid data interval");
-    }
     if (updateInterval <= 0) {
         throw SimpleException(M_IODEVICE_MESSAGE_DOMAIN, "Invalid update interval");
-    }
-    if (updateInterval % dataInterval != 0) {
-        throw SimpleException(M_IODEVICE_MESSAGE_DOMAIN,
-                              "Update interval must be an integer multiple of data interval");
     }
 }
 
 
 Device::~Device() {
     if (-1 != handle) {
-        writeBuffer.append("LED_COMM", 0);
-        logError(writeBuffer.write(), "Cannot turn off LJM device COMM LED");
+        logError(LJM_eWriteName(handle, "LED_COMM", 0), "Cannot turn off LJM device COMM LED");
         logError(LJM_Close(handle), "Cannot close LJM device");
     }
 }
@@ -122,19 +89,21 @@ bool Device::initialize() {
         return false;
     }
     
+    WriteBuffer writeBuffer;
+    
     writeBuffer.append("IO_CONFIG_SET_CURRENT_TO_FACTORY", 1);
     writeBuffer.append("POWER_LED", 4);  // Set LED operation to manual
     writeBuffer.append("LED_STATUS", 1);
     writeBuffer.append("LED_COMM", 1);
     
     if (haveDigitalInputs()) {
-        prepareDigitalInputs();
+        prepareDigitalInputs(writeBuffer);
     }
     if (haveDigitalOutputs()) {
-        prepareDigitalOutputs();
+        prepareDigitalOutputs(writeBuffer);
     }
     
-    if (logError(writeBuffer.write(), "Cannot configure LJM device")) {
+    if (logError(writeBuffer.write(handle), "Cannot configure LJM device")) {
         return false;
     }
     
@@ -146,18 +115,18 @@ bool Device::startDeviceIO() {
     lock_guard lock(mutex);
     
     if (!running) {
+        WriteBuffer writeBuffer;
+        
         if (haveDigitalOutputs()) {
-            updateDigitalOutputs(true);
+            updateDigitalOutputs(writeBuffer, true);
         }
         
-        if (logError(writeBuffer.write(), "Cannot start LJM device")) {
+        if (logError(writeBuffer.write(handle), "Cannot start LJM device")) {
             return false;
         }
         
-        if (haveInputs()) {
-            if (!stream.start()) {
-                return false;
-            }
+        if (haveInputs() && !readInputsTask) {
+            startReadInputsTask();
         }
         
         running = true;
@@ -171,17 +140,17 @@ bool Device::stopDeviceIO() {
     lock_guard lock(mutex);
     
     if (running) {
-        if (haveInputs()) {
-            if (!stream.stop()) {
-                return false;
-            }
+        if (readInputsTask) {
+            stopReadInputsTask();
         }
+        
+        WriteBuffer writeBuffer;
         
         if (haveDigitalOutputs()) {
-            updateDigitalOutputs();
+            updateDigitalOutputs(writeBuffer);
         }
         
-        if (logError(writeBuffer.write(), "Cannot stop LJM device")) {
+        if (logError(writeBuffer.write(handle), "Cannot stop LJM device")) {
             return false;
         }
         
@@ -189,6 +158,64 @@ bool Device::stopDeviceIO() {
     }
     
     return true;
+}
+
+
+void Device::IOBuffer::append(const std::string &name, double value) {
+    int type;
+    auto address = convertNameToAddress(name, type);
+    names.emplace_back(name);
+    addresses.push_back(address);
+    types.push_back(type);
+    values.push_back(value);
+}
+
+
+int Device::WriteBuffer::write(int handle) {
+    if (addresses.empty()) {
+        return LJME_NOERROR;
+    }
+    
+    int errorAddress = -1;
+    auto result = LJM_eWriteAddresses(handle,
+                                      addresses.size(),
+                                      addresses.data(),
+                                      types.data(),
+                                      values.data(),
+                                      &errorAddress);
+    if (LJME_NOERROR != result) {
+        merror(M_IODEVICE_MESSAGE_DOMAIN, "Error writing to LJM register \"%s\"", names.at(errorAddress).c_str());
+    }
+    
+    return result;
+}
+
+
+inline double Device::ReadBuffer::ValueReader::next() {
+    if (iter == end) {
+        throw std::out_of_range("Internal error: no more values to read");
+    }
+    return *(iter++);
+}
+
+
+int Device::ReadBuffer::read(int handle) {
+    if (addresses.empty()) {
+        return LJME_NOERROR;
+    }
+    
+    int errorAddress = -1;
+    auto result = LJM_eReadAddresses(handle,
+                                     addresses.size(),
+                                     addresses.data(),
+                                     types.data(),
+                                     values.data(),
+                                     &errorAddress);
+    if (LJME_NOERROR != result) {
+        merror(M_IODEVICE_MESSAGE_DOMAIN, "Error reading from LJM register \"%s\"", names.at(errorAddress).c_str());
+    }
+    
+    return result;
 }
 
 
@@ -219,7 +246,7 @@ void Device::validateDigitalChannel(const boost::shared_ptr<DigitalChannel> &cha
 }
 
 
-void Device::prepareDigitalInputs() {
+void Device::prepareDigitalInputs(WriteBuffer &writeBuffer) {
     auto dioInhibit = ~std::uint32_t(0);
     
     for (auto &channel : digitalInputChannels) {
@@ -233,12 +260,11 @@ void Device::prepareDigitalInputs() {
     }
     writeBuffer.append("DIO_DIRECTION", 0);
     
-    stream.add("FIO_EIO_STATE");
-    stream.add("CIO_MIO_STATE");
+    readBuffer.append("DIO_STATE");
 }
 
 
-void Device::prepareDigitalOutputs() {
+void Device::prepareDigitalOutputs(WriteBuffer &writeBuffer) {
     boost::weak_ptr<Device> weakThis(component_shared_from_this<Device>());
     
     for (auto &channel : digitalOutputChannels) {
@@ -259,11 +285,11 @@ void Device::prepareDigitalOutputs() {
         channel->addNewValueNotification(boost::make_shared<VariableCallbackNotification>(callback));
     }
     
-    updateDigitalOutputs();
+    updateDigitalOutputs(writeBuffer);
 }
 
 
-void Device::updateDigitalOutputs(bool active) {
+void Device::updateDigitalOutputs(WriteBuffer &writeBuffer, bool active) {
     auto dioInhibit = ~std::uint32_t(0);
     auto dioDirection = std::uint32_t(0);
     auto dioState = std::uint32_t(0);
@@ -286,127 +312,51 @@ void Device::updateDigitalOutputs(bool active) {
 }
 
 
+void Device::startReadInputsTask() {
+    boost::weak_ptr<Device> weakThis(component_shared_from_this<Device>());
+    readInputsTask = Scheduler::instance()->scheduleUS(FILELINE,
+                                                       updateInterval,
+                                                       updateInterval,
+                                                       M_REPEAT_INDEFINITELY,
+                                                       [weakThis]() {
+                                                           if (auto sharedThis = weakThis.lock()) {
+                                                               lock_guard lock(sharedThis->mutex);
+                                                               sharedThis->readInputs();
+                                                           }
+                                                           return nullptr;
+                                                       },
+                                                       M_DEFAULT_IODEVICE_PRIORITY,
+                                                       M_DEFAULT_IODEVICE_WARN_SLOP_US,
+                                                       M_DEFAULT_IODEVICE_FAIL_SLOP_US,
+                                                       M_MISSED_EXECUTION_DROP);
+}
+
+
+void Device::stopReadInputsTask() {
+    readInputsTask->cancel();
+    readInputsTask.reset();
+}
+
+
 void Device::readInputs() {
-    if (!stream.read()) {
+    if (!readInputsTask) {
+        // If we've already been canceled, don't try to read more data
+        return;
+    }
+    
+    if (logError(readBuffer.read(handle), "Cannot read inputs from LJM device")) {
         return;
     }
     
     const auto currentTime = clock->getCurrentTimeUS();
-    auto data = stream.getData();
+    auto values = readBuffer.getValues();
     
-    do {
-        if (haveDigitalInputs()) {
-            const auto dioState = data.get<std::uint32_t>();
-            for (auto &channel : digitalInputChannels) {
-                channel->setValue(bool(dioState & (1 << channel->getDIOIndex())), currentTime);
-            }
+    if (haveDigitalInputs()) {
+        const auto dioState = std::uint32_t(values.next());
+        for (auto &channel : digitalInputChannels) {
+            channel->setValue(bool(dioState & (1 << channel->getDIOIndex())), currentTime);
         }
-    } while (data);
-}
-
-
-void Device::WriteBuffer::append(const std::string &name, double value) {
-    int type;
-    auto address = convertNameToAddress(name, type);
-    names.emplace_back(name);
-    addresses.push_back(address);
-    types.push_back(type);
-    values.push_back(value);
-}
-
-
-int Device::WriteBuffer::write() {
-    if (addresses.empty()) {
-        return LJME_NOERROR;
     }
-    
-    int errorAddress = -1;
-    auto result = LJM_eWriteAddresses(handle,
-                                      addresses.size(),
-                                      addresses.data(),
-                                      types.data(),
-                                      values.data(),
-                                      &errorAddress);
-    if (LJME_NOERROR != result) {
-        merror(M_IODEVICE_MESSAGE_DOMAIN, "Error writing to LJM register \"%s\"", names.at(errorAddress).c_str());
-    }
-    
-    names.clear();
-    addresses.clear();
-    types.clear();
-    values.clear();
-    
-    return result;
-}
-
-
-void Device::Stream::add(const std::string &name) {
-    addresses.push_back(convertNameToAddress(name));
-}
-
-
-bool Device::Stream::start() {
-    scansPerRead = device.updateInterval / device.dataInterval;
-    const auto numAddresses = addresses.size();
-    data.resize(numAddresses * scansPerRead);
-    
-    const auto desiredScanRate = 1e6 * double(scansPerRead) / double(device.updateInterval);  // scans per second
-    auto actualScanRate = desiredScanRate;
-    
-    if (logError(LJM_eStreamStart(device.handle, scansPerRead, numAddresses, addresses.data(), &actualScanRate),
-                 "Cannot start LJM input stream") ||
-        logError(LJM_SetStreamCallback(device.handle, callback, &device),
-                 "Cannot set LJM input stream callback"))
-    {
-        return false;
-    }
-    
-    if (actualScanRate != desiredScanRate) {
-        mwarning(M_IODEVICE_MESSAGE_DOMAIN,
-                 "LJM device cannot scan inputs at desired rate: "
-                 "requested %g scans/second, got %g scans/second",
-                 desiredScanRate,
-                 actualScanRate);
-    }
-    
-    return true;
-}
-
-
-bool Device::Stream::read() {
-    int deviceScanBacklog = 0;
-    int ljmScanBacklog = 0;
-    
-    if (logError(LJM_eStreamRead(device.handle, data.data(), &deviceScanBacklog, &ljmScanBacklog),
-                 "LJM stream read failed"))
-    {
-        return false;
-    }
-    
-    // Warn if there's more than one read's worth of scans in either buffer's backlog
-    if (deviceScanBacklog > scansPerRead) {
-        mwarning(M_IODEVICE_MESSAGE_DOMAIN, "LJM device buffer contains %d unread input scans", deviceScanBacklog);
-    }
-    if (ljmScanBacklog > scansPerRead) {
-        mwarning(M_IODEVICE_MESSAGE_DOMAIN, "LJM library buffer contains %d unread input scans", ljmScanBacklog);
-    }
-    
-    return true;
-}
-
-
-bool Device::Stream::stop() {
-    if (logError(LJM_eStreamStop(device.handle), "Cannot stop LJM input stream")) {
-        return false;
-    }
-    return true;
-}
-
-
-void Device::Stream::callback(void *_device) {
-    auto &device = *static_cast<Device *>(_device);
-    lock_guard lock(device.mutex);
-    device.readInputs();
 }
 
 
