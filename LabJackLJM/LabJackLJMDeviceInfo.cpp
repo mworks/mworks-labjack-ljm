@@ -118,12 +118,24 @@ class T7DeviceInfo : public DeviceInfo {
         return isInRange<PhysicalLine::DIO_MIN, PhysicalLine::DIO_MAX>(line);
     }
     
+    int getDACIndex(int line) const override {
+        return (line - static_cast<int>(PhysicalLine::DAC0));
+    }
+    
+    int getAINIndex(int line) const override {
+        return (line - static_cast<int>(PhysicalLine::AIN0));
+    }
+    
     int getDIOIndex(int line) const override {
         return (line - static_cast<int>(PhysicalLine::DIO0));
     }
     
     bool hasFlexibleIO() const override {
         return false;
+    }
+    
+    bool isFlexibleIO(int line) const override {
+        return false;  // No flexible I/O lines on T7
     }
     
     bool parseLineName(const std::string &name, int &line) const override;
@@ -218,12 +230,24 @@ class T4DeviceInfo : public DeviceInfo {
         return isInRange<PhysicalLine::DIO_MIN, PhysicalLine::DIO_MAX>(line);
     }
     
+    int getDACIndex(int line) const override {
+        return (line - static_cast<int>(PhysicalLine::DAC0));
+    }
+    
+    int getAINIndex(int line) const override {
+        return (line - static_cast<int>(PhysicalLine::AIN0));
+    }
+    
     int getDIOIndex(int line) const override {
         return (line - static_cast<int>(PhysicalLine::DIO4) + 4);  // No DIO0-3 on T4
     }
     
     bool hasFlexibleIO() const override {
         return true;
+    }
+    
+    bool isFlexibleIO(int line) const override {
+        return isInRange<PhysicalLine::AIN4, PhysicalLine::AIN11>(line);
     }
     
     bool parseLineName(const std::string &name, int &line) const override;

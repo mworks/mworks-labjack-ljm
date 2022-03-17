@@ -18,27 +18,26 @@ DigitalChannel::DigitalChannel(const ParameterValueMap &parameters) :
 { }
 
 
+int DigitalChannel::resolveLine(const DeviceInfo &deviceInfo) {
+    auto line = SingleLineChannel::resolveLine(deviceInfo);
+    if (!(deviceInfo.isDIO(line))) {
+        throw SimpleException(M_IODEVICE_MESSAGE_DOMAIN, boost::format("%s is not a digital line") % lineName);
+    }
+    dioIndex = deviceInfo.getDIOIndex(line);
+    canonicalLineName = (boost::format("DIO%d") % dioIndex).str();
+    return line;
+}
+
+
 void DigitalInputChannel::describeComponent(ComponentInfo &info) {
     DigitalChannel::describeComponent(info);
     info.setSignature("iochannel/labjack_ljm_digital_input");
 }
 
 
-void DigitalInputChannel::setValue(bool value, MWTime time) const {
-    if (valueVar->getValue().getBool() != value) {
-        valueVar->setValue(Datum(value), time);
-    }
-}
-
-
 void DigitalOutputChannel::describeComponent(ComponentInfo &info) {
     DigitalChannel::describeComponent(info);
     info.setSignature("iochannel/labjack_ljm_digital_output");
-}
-
-
-bool DigitalOutputChannel::getValue() const {
-    return valueVar->getValue().getBool();
 }
 
 

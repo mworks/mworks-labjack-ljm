@@ -42,6 +42,7 @@
 		E1E7C7112385C99500F37E3E /* libLabJackM.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = E1E7C7102385C99500F37E3E /* libLabJackM.dylib */; };
 		E1E7C7132385CA8E00F37E3E /* LabJackLJM.bundle in CopyFiles */ = {isa = PBXBuildFile; fileRef = E1E7C6F32385C42F00F37E3E /* LabJackLJM.bundle */; };
 		E1E7C7172385CEE300F37E3E /* LabJackLJMDevice.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E1E7C7152385CEE300F37E3E /* LabJackLJMDevice.cpp */; };
+		E1EB3B4C27E373EC008EDABF /* LabJackLJMAnalogChannel.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E1EB3B4A27E373EC008EDABF /* LabJackLJMAnalogChannel.cpp */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -93,6 +94,8 @@
 		E1E7C7102385C99500F37E3E /* libLabJackM.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libLabJackM.dylib; path = /usr/local/lib/libLabJackM.dylib; sourceTree = "<absolute>"; };
 		E1E7C7152385CEE300F37E3E /* LabJackLJMDevice.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = LabJackLJMDevice.cpp; sourceTree = "<group>"; };
 		E1E7C7162385CEE300F37E3E /* LabJackLJMDevice.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = LabJackLJMDevice.hpp; sourceTree = "<group>"; };
+		E1EB3B4A27E373EC008EDABF /* LabJackLJMAnalogChannel.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = LabJackLJMAnalogChannel.cpp; sourceTree = "<group>"; };
+		E1EB3B4B27E373EC008EDABF /* LabJackLJMAnalogChannel.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = LabJackLJMAnalogChannel.hpp; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -113,6 +116,8 @@
 			children = (
 				E183D44123887216008CB164 /* LabJackLJMChannel.hpp */,
 				E183D44023887216008CB164 /* LabJackLJMChannel.cpp */,
+				E1EB3B4B27E373EC008EDABF /* LabJackLJMAnalogChannel.hpp */,
+				E1EB3B4A27E373EC008EDABF /* LabJackLJMAnalogChannel.cpp */,
 				E13416AF239AB93E000985A9 /* LabJackLJMDigitalChannel.hpp */,
 				E13416AE239AB93E000985A9 /* LabJackLJMDigitalChannel.cpp */,
 			);
@@ -284,6 +289,7 @@
 				E183D44223887216008CB164 /* LabJackLJMChannel.cpp in Sources */,
 				E13416B0239AB93E000985A9 /* LabJackLJMDigitalChannel.cpp in Sources */,
 				E186882C238D7E8200B1C658 /* LabJackLJMUtilities.cpp in Sources */,
+				E1EB3B4C27E373EC008EDABF /* LabJackLJMAnalogChannel.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

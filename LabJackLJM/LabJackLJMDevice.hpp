@@ -9,8 +9,8 @@
 #ifndef LabJackLJMDevice_hpp
 #define LabJackLJMDevice_hpp
 
+#include "LabJackLJMAnalogChannel.hpp"
 #include "LabJackLJMDigitalChannel.hpp"
-#include "LabJackLJMDeviceInfo.hpp"
 
 
 BEGIN_NAMESPACE_MW_LABJACK_LJM
@@ -70,8 +70,14 @@ private:
         return convertNameToAddress(name, type);
     }
     
-    int reserveLine(const std::string &lineName);
-    void validateDigitalChannel(const boost::shared_ptr<DigitalChannel> &channel);
+    void reserveLine(const boost::shared_ptr<SingleLineChannel> &channel);
+    
+    bool haveAnalogInputs() const { return !(analogInputChannels.empty()); }
+    void prepareAnalogInputs(WriteBuffer &writeBuffer);
+    
+    bool haveAnalogOutputs() const { return !(analogOutputChannels.empty()); }
+    void prepareAnalogOutputs(WriteBuffer &writeBuffer);
+    void updateAnalogOutputs(WriteBuffer &writeBuffer, bool active = false);
     
     bool haveDigitalInputs() const { return !(digitalInputChannels.empty()); }
     void prepareDigitalInputs(WriteBuffer &writeBuffer);
@@ -80,7 +86,7 @@ private:
     void prepareDigitalOutputs(WriteBuffer &writeBuffer);
     void updateDigitalOutputs(WriteBuffer &writeBuffer, bool active = false);
     
-    bool haveInputs() const { return (haveDigitalInputs()); }
+    bool haveInputs() const { return (haveAnalogInputs() || haveDigitalInputs()); }
     void startReadInputsTask();
     void stopReadInputsTask();
     void readInputs();
@@ -91,6 +97,9 @@ private:
     const MWTime updateInterval;
     
     const boost::shared_ptr<Clock> clock;
+    
+    std::vector<boost::shared_ptr<AnalogInputChannel>> analogInputChannels;
+    std::vector<boost::shared_ptr<AnalogOutputChannel>> analogOutputChannels;
     
     std::vector<boost::shared_ptr<DigitalInputChannel>> digitalInputChannels;
     std::vector<boost::shared_ptr<DigitalOutputChannel>> digitalOutputChannels;

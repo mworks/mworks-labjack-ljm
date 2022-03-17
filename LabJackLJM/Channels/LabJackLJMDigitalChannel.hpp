@@ -20,7 +20,8 @@ class DigitalChannel : public SingleLineChannel {
 public:
     explicit DigitalChannel(const ParameterValueMap &parameters);
     
-    void setDIOIndex(int index) { dioIndex = index; }
+    int resolveLine(const DeviceInfo &deviceInfo) override;
+    
     int getDIOIndex() const { return dioIndex; }
     
 private:
@@ -36,7 +37,11 @@ public:
     
     using DigitalChannel::DigitalChannel;
     
-    void setValue(bool value, MWTime time) const;
+    void setValue(bool value, MWTime time) const {
+        if (valueVar->getValue().getBool() != value) {
+            valueVar->setValue(Datum(value), time);
+        }
+    }
     
 };
 
@@ -52,7 +57,9 @@ public:
         valueVar->addNotification(notification);
     }
     
-    bool getValue() const;
+    bool getValue() const {
+        return valueVar->getValue().getBool();
+    }
     
 };
 

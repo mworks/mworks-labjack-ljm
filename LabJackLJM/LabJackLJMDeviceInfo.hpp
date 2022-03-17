@@ -28,9 +28,12 @@ public:
     virtual bool isAIN(int line) const = 0;
     virtual bool isDIO(int line) const = 0;
     
+    virtual int getDACIndex(int line) const = 0;
+    virtual int getAINIndex(int line) const = 0;
     virtual int getDIOIndex(int line) const = 0;
     
     virtual bool hasFlexibleIO() const = 0;
+    virtual bool isFlexibleIO(int line) const = 0;
     
 private:
     virtual bool parseLineName(const std::string &name, int &line) const = 0;

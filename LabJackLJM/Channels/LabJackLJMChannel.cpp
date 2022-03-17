@@ -35,4 +35,9 @@ SingleLineChannel::SingleLineChannel(const ParameterValueMap &parameters) :
 { }
 
 
+int SingleLineChannel::resolveLine(const DeviceInfo &deviceInfo) {
+    return deviceInfo.getLineForName(lineName);
+}
+
+
 END_NAMESPACE_MW_LABJACK_LJM

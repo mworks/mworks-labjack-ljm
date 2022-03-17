@@ -9,7 +9,7 @@
 #ifndef LabJackLJMChannel_hpp
 #define LabJackLJMChannel_hpp
 
-#include "LabJackLJMUtilities.hpp"
+#include "LabJackLJMDeviceInfo.hpp"
 
 
 BEGIN_NAMESPACE_MW_LABJACK_LJM
@@ -33,11 +33,16 @@ public:
     
     explicit SingleLineChannel(const ParameterValueMap &parameters);
     
+    virtual int resolveLine(const DeviceInfo &deviceInfo);
+    
     const std::string & getLineName() const { return lineName; }
+    const std::string & getCanonicalLineName() const { return canonicalLineName; }
     
 protected:
     const std::string lineName;
     const VariablePtr valueVar;
+    
+    std::string canonicalLineName;
     
 };
 

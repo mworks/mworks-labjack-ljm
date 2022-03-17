@@ -58,6 +58,14 @@ void Device::addChild(std::map<std::string, std::string> parameters,
                       ComponentRegistryPtr reg,
                       boost::shared_ptr<Component> child)
 {
+    if (auto channel = boost::dynamic_pointer_cast<AnalogInputChannel>(child)) {
+        analogInputChannels.emplace_back(std::move(channel));
+        return;
+    }
+    if (auto channel = boost::dynamic_pointer_cast<AnalogOutputChannel>(child)) {
+        analogOutputChannels.emplace_back(std::move(channel));
+        return;
+    }
     if (auto channel = boost::dynamic_pointer_cast<DigitalInputChannel>(child)) {
         digitalInputChannels.emplace_back(std::move(channel));
         return;
@@ -96,6 +104,12 @@ bool Device::initialize() {
     writeBuffer.append("LED_STATUS", 1);
     writeBuffer.append("LED_COMM", 1);
     
+    if (haveAnalogInputs()) {
+        prepareAnalogInputs(writeBuffer);
+    }
+    if (haveAnalogOutputs()) {
+        prepareAnalogOutputs(writeBuffer);
+    }
     if (haveDigitalInputs()) {
         prepareDigitalInputs(writeBuffer);
     }
@@ -117,6 +131,9 @@ bool Device::startDeviceIO() {
     if (!running) {
         WriteBuffer writeBuffer;
         
+        if (haveAnalogOutputs()) {
+            updateAnalogOutputs(writeBuffer, true);
+        }
         if (haveDigitalOutputs()) {
             updateDigitalOutputs(writeBuffer, true);
         }
@@ -146,6 +163,9 @@ bool Device::stopDeviceIO() {
         
         WriteBuffer writeBuffer;
         
+        if (haveAnalogOutputs()) {
+            updateAnalogOutputs(writeBuffer);
+        }
         if (haveDigitalOutputs()) {
             updateDigitalOutputs(writeBuffer);
         }
@@ -227,22 +247,65 @@ int Device::convertNameToAddress(const std::string &name, int &type) {
 }
 
 
-int Device::reserveLine(const std::string &lineName) {
-    const auto line = deviceInfo->getLineForName(lineName);
+void Device::reserveLine(const boost::shared_ptr<SingleLineChannel> &channel) {
+    auto line = channel->resolveLine(*deviceInfo);
     if (!(linesInUse.insert(line).second)) {
-        throw SimpleException(M_IODEVICE_MESSAGE_DOMAIN, boost::format("Line %s is already in use") % lineName);
+        throw SimpleException(M_IODEVICE_MESSAGE_DOMAIN,
+                              boost::format("Line %s is already in use") % channel->getLineName());
     }
-    return line;
 }
 
 
-void Device::validateDigitalChannel(const boost::shared_ptr<DigitalChannel> &channel) {
-    auto &lineName = channel->getLineName();
-    const auto line = reserveLine(lineName);
-    if (!(deviceInfo->isDIO(line))) {
-        throw SimpleException(M_IODEVICE_MESSAGE_DOMAIN, boost::format("%s is not a digital line") % lineName);
+void Device::prepareAnalogInputs(WriteBuffer &writeBuffer) {
+    auto dioInhibit = ~std::uint32_t(0);
+    auto dioAnalogEnable = std::uint32_t(0);
+    
+    for (auto &channel : analogInputChannels) {
+        reserveLine(channel);
+        readBuffer.append(channel->getCanonicalLineName());
+        if (channel->isFlexibleIO()) {
+            auto dioIndex = channel->getDIOIndex();
+            dioInhibit ^= (1 << dioIndex);
+            dioAnalogEnable |= (1 << dioIndex);
+        }
     }
-    channel->setDIOIndex(deviceInfo->getDIOIndex(line));
+    
+    if (deviceInfo->hasFlexibleIO()) {
+        writeBuffer.append("DIO_INHIBIT", dioInhibit);
+        writeBuffer.append("DIO_ANALOG_ENABLE", dioAnalogEnable);
+    }
+}
+
+
+void Device::prepareAnalogOutputs(WriteBuffer &writeBuffer) {
+    boost::weak_ptr<Device> weakThis(component_shared_from_this<Device>());
+    
+    for (auto &channel : analogOutputChannels) {
+        reserveLine(channel);
+        int type;
+        auto address = convertNameToAddress(channel->getCanonicalLineName(), type);
+        // It's OK to capture channel by reference, because it will remain alive (in
+        // analogOutputChannels) for as long as the device is alive
+        auto callback = [weakThis, address, type, &channel](const Datum &data, MWTime time) {
+            if (auto sharedThis = weakThis.lock()) {
+                lock_guard lock(sharedThis->mutex);
+                if (sharedThis->running) {
+                    logError(LJM_eWriteAddress(sharedThis->handle, address, type, channel->getValue()),
+                             "Cannot set analog output line on LJM device");
+                }
+            }
+        };
+        channel->addNewValueNotification(boost::make_shared<VariableCallbackNotification>(callback));
+    }
+    
+    updateAnalogOutputs(writeBuffer);
+}
+
+
+void Device::updateAnalogOutputs(WriteBuffer &writeBuffer, bool active) {
+    for (auto &channel : analogOutputChannels) {
+        writeBuffer.append(channel->getCanonicalLineName(), (active ? channel->getValue() : 0.0));
+    }
 }
 
 
@@ -250,7 +313,7 @@ void Device::prepareDigitalInputs(WriteBuffer &writeBuffer) {
     auto dioInhibit = ~std::uint32_t(0);
     
     for (auto &channel : digitalInputChannels) {
-        validateDigitalChannel(channel);
+        reserveLine(channel);
         dioInhibit ^= (1 << channel->getDIOIndex());
     }
     
@@ -268,9 +331,9 @@ void Device::prepareDigitalOutputs(WriteBuffer &writeBuffer) {
     boost::weak_ptr<Device> weakThis(component_shared_from_this<Device>());
     
     for (auto &channel : digitalOutputChannels) {
-        validateDigitalChannel(channel);
+        reserveLine(channel);
         int type;
-        auto address = convertNameToAddress((boost::format("DIO%d") % channel->getDIOIndex()).str(), type);
+        auto address = convertNameToAddress(channel->getCanonicalLineName(), type);
         // It's OK to capture channel by reference, because it will remain alive (in
         // digitalOutputChannels) for as long as the device is alive
         auto callback = [weakThis, address, type, &channel](const Datum &data, MWTime time) {
@@ -350,6 +413,12 @@ void Device::readInputs() {
     
     const auto currentTime = clock->getCurrentTimeUS();
     auto values = readBuffer.getValues();
+    
+    if (haveAnalogInputs()) {
+        for (auto &channel : analogInputChannels) {
+            channel->setValue(values.next(), currentTime);
+        }
+    }
     
     if (haveDigitalInputs()) {
         const auto dioState = std::uint32_t(values.next());
