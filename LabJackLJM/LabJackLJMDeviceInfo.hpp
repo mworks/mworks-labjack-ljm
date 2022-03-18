@@ -35,6 +35,8 @@ public:
     virtual bool hasFlexibleIO() const = 0;
     virtual bool isFlexibleIO(int line) const = 0;
     
+    virtual bool isHighSpeedCounter(int line) const = 0;
+    
 private:
     virtual bool parseLineName(const std::string &name, int &line) const = 0;
     

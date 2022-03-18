@@ -64,6 +64,24 @@ public:
 };
 
 
+class CounterChannel : public DigitalChannel {
+    
+public:
+    static void describeComponent(ComponentInfo &info);
+    
+    using DigitalChannel::DigitalChannel;
+    
+    int resolveLine(const DeviceInfo &deviceInfo) override;
+    
+    void setValue(long long value, MWTime time) const {
+        if (valueVar->getValue().getInteger() != value) {
+            valueVar->setValue(Datum(value), time);
+        }
+    }
+    
+};
+
+
 END_NAMESPACE_MW_LABJACK_LJM
 
 

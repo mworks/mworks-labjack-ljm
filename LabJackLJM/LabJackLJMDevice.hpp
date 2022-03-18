@@ -73,20 +73,24 @@ private:
     void reserveLine(const boost::shared_ptr<SingleLineChannel> &channel);
     
     bool haveAnalogInputs() const { return !(analogInputChannels.empty()); }
-    void prepareAnalogInputs(WriteBuffer &writeBuffer);
+    void prepareAnalogInputs(WriteBuffer &configBuffer);
     
     bool haveAnalogOutputs() const { return !(analogOutputChannels.empty()); }
-    void prepareAnalogOutputs(WriteBuffer &writeBuffer);
-    void updateAnalogOutputs(WriteBuffer &writeBuffer, bool active = false);
+    void prepareAnalogOutputs(WriteBuffer &configBuffer);
+    void updateAnalogOutputs(WriteBuffer &configBuffer, bool active = false);
     
     bool haveDigitalInputs() const { return !(digitalInputChannels.empty()); }
-    void prepareDigitalInputs(WriteBuffer &writeBuffer);
+    void prepareDigitalInputs(WriteBuffer &configBuffer);
     
     bool haveDigitalOutputs() const { return !(digitalOutputChannels.empty()); }
-    void prepareDigitalOutputs(WriteBuffer &writeBuffer);
-    void updateDigitalOutputs(WriteBuffer &writeBuffer, bool active = false);
+    void prepareDigitalOutputs(WriteBuffer &configBuffer);
+    void updateDigitalOutputs(WriteBuffer &configBuffer, bool active = false);
     
-    bool haveInputs() const { return (haveAnalogInputs() || haveDigitalInputs()); }
+    bool haveCounters() const { return !(counterChannels.empty()); }
+    void prepareCounters(WriteBuffer &configBuffer);
+    bool resetCounters();
+    
+    bool haveInputs() const { return (haveAnalogInputs() || haveDigitalInputs() || haveCounters()); }
     void startReadInputsTask();
     void stopReadInputsTask();
     void readInputs();
@@ -104,11 +108,13 @@ private:
     std::vector<boost::shared_ptr<DigitalInputChannel>> digitalInputChannels;
     std::vector<boost::shared_ptr<DigitalOutputChannel>> digitalOutputChannels;
     
+    std::vector<boost::shared_ptr<CounterChannel>> counterChannels;
+    
     int handle;
     std::unique_ptr<DeviceInfo> deviceInfo;
     std::set<int> linesInUse;
     
-    ReadBuffer readBuffer;
+    ReadBuffer inputBuffer;
     boost::shared_ptr<ScheduleTask> readInputsTask;
     
     using lock_guard = std::lock_guard<std::mutex>;

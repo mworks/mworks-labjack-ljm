@@ -138,6 +138,10 @@ class T7DeviceInfo : public DeviceInfo {
         return false;  // No flexible I/O lines on T7
     }
     
+    bool isHighSpeedCounter(int line) const override {
+        return isInRange<PhysicalLine::CIO0, PhysicalLine::CIO3>(line);
+    }
+    
     bool parseLineName(const std::string &name, int &line) const override;
     
 };
@@ -248,6 +252,10 @@ class T4DeviceInfo : public DeviceInfo {
     
     bool isFlexibleIO(int line) const override {
         return isInRange<PhysicalLine::AIN4, PhysicalLine::AIN11>(line);
+    }
+    
+    bool isHighSpeedCounter(int line) const override {
+        return isInRange<PhysicalLine::CIO0, PhysicalLine::CIO3>(line);
     }
     
     bool parseLineName(const std::string &name, int &line) const override;

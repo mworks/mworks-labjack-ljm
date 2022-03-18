@@ -41,4 +41,20 @@ void DigitalOutputChannel::describeComponent(ComponentInfo &info) {
 }
 
 
+void CounterChannel::describeComponent(ComponentInfo &info) {
+    DigitalChannel::describeComponent(info);
+    info.setSignature("iochannel/labjack_ljm_counter");
+}
+
+
+int CounterChannel::resolveLine(const DeviceInfo &deviceInfo) {
+    auto line = DigitalChannel::resolveLine(deviceInfo);
+    if (!(deviceInfo.isHighSpeedCounter(line))) {
+        throw SimpleException(M_IODEVICE_MESSAGE_DOMAIN,
+                              boost::format("%s is not a high-speed counter input line") % lineName);
+    }
+    return line;
+}
+
+
 END_NAMESPACE_MW_LABJACK_LJM

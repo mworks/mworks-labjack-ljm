@@ -74,6 +74,10 @@ void Device::addChild(std::map<std::string, std::string> parameters,
         digitalOutputChannels.emplace_back(std::move(channel));
         return;
     }
+    if (auto channel = boost::dynamic_pointer_cast<CounterChannel>(child)) {
+        counterChannels.emplace_back(std::move(channel));
+        return;
+    }
     throw SimpleException(M_IODEVICE_MESSAGE_DOMAIN, "Invalid channel type for LabJack LJM device");
 }
 
@@ -97,27 +101,30 @@ bool Device::initialize() {
         return false;
     }
     
-    WriteBuffer writeBuffer;
+    WriteBuffer configBuffer;
     
-    writeBuffer.append("IO_CONFIG_SET_CURRENT_TO_FACTORY", 1);
-    writeBuffer.append("POWER_LED", 4);  // Set LED operation to manual
-    writeBuffer.append("LED_STATUS", 1);
-    writeBuffer.append("LED_COMM", 1);
+    configBuffer.append("IO_CONFIG_SET_CURRENT_TO_FACTORY", 1);
+    configBuffer.append("POWER_LED", 4);  // Set LED operation to manual
+    configBuffer.append("LED_STATUS", 1);
+    configBuffer.append("LED_COMM", 1);
     
     if (haveAnalogInputs()) {
-        prepareAnalogInputs(writeBuffer);
+        prepareAnalogInputs(configBuffer);
     }
     if (haveAnalogOutputs()) {
-        prepareAnalogOutputs(writeBuffer);
+        prepareAnalogOutputs(configBuffer);
     }
     if (haveDigitalInputs()) {
-        prepareDigitalInputs(writeBuffer);
+        prepareDigitalInputs(configBuffer);
     }
     if (haveDigitalOutputs()) {
-        prepareDigitalOutputs(writeBuffer);
+        prepareDigitalOutputs(configBuffer);
+    }
+    if (haveCounters()) {
+        prepareCounters(configBuffer);
     }
     
-    if (logError(writeBuffer.write(handle), "Cannot configure LJM device")) {
+    if (logError(configBuffer.write(handle), "Cannot configure LJM device")) {
         return false;
     }
     
@@ -129,16 +136,20 @@ bool Device::startDeviceIO() {
     lock_guard lock(mutex);
     
     if (!running) {
-        WriteBuffer writeBuffer;
+        if (haveCounters() && !resetCounters()) {
+            return false;
+        }
+        
+        WriteBuffer configBuffer;
         
         if (haveAnalogOutputs()) {
-            updateAnalogOutputs(writeBuffer, true);
+            updateAnalogOutputs(configBuffer, true);
         }
         if (haveDigitalOutputs()) {
-            updateDigitalOutputs(writeBuffer, true);
+            updateDigitalOutputs(configBuffer, true);
         }
         
-        if (logError(writeBuffer.write(handle), "Cannot start LJM device")) {
+        if (logError(configBuffer.write(handle), "Cannot start LJM device")) {
             return false;
         }
         
@@ -161,16 +172,16 @@ bool Device::stopDeviceIO() {
             stopReadInputsTask();
         }
         
-        WriteBuffer writeBuffer;
+        WriteBuffer configBuffer;
         
         if (haveAnalogOutputs()) {
-            updateAnalogOutputs(writeBuffer);
+            updateAnalogOutputs(configBuffer);
         }
         if (haveDigitalOutputs()) {
-            updateDigitalOutputs(writeBuffer);
+            updateDigitalOutputs(configBuffer);
         }
         
-        if (logError(writeBuffer.write(handle), "Cannot stop LJM device")) {
+        if (logError(configBuffer.write(handle), "Cannot stop LJM device")) {
             return false;
         }
         
@@ -256,13 +267,13 @@ void Device::reserveLine(const boost::shared_ptr<SingleLineChannel> &channel) {
 }
 
 
-void Device::prepareAnalogInputs(WriteBuffer &writeBuffer) {
+void Device::prepareAnalogInputs(WriteBuffer &configBuffer) {
     auto dioInhibit = ~std::uint32_t(0);
     auto dioAnalogEnable = std::uint32_t(0);
     
     for (auto &channel : analogInputChannels) {
         reserveLine(channel);
-        readBuffer.append(channel->getCanonicalLineName());
+        inputBuffer.append(channel->getCanonicalLineName());
         if (channel->isFlexibleIO()) {
             auto dioIndex = channel->getDIOIndex();
             dioInhibit ^= (1 << dioIndex);
@@ -271,13 +282,13 @@ void Device::prepareAnalogInputs(WriteBuffer &writeBuffer) {
     }
     
     if (deviceInfo->hasFlexibleIO()) {
-        writeBuffer.append("DIO_INHIBIT", dioInhibit);
-        writeBuffer.append("DIO_ANALOG_ENABLE", dioAnalogEnable);
+        configBuffer.append("DIO_INHIBIT", dioInhibit);
+        configBuffer.append("DIO_ANALOG_ENABLE", dioAnalogEnable);
     }
 }
 
 
-void Device::prepareAnalogOutputs(WriteBuffer &writeBuffer) {
+void Device::prepareAnalogOutputs(WriteBuffer &configBuffer) {
     boost::weak_ptr<Device> weakThis(component_shared_from_this<Device>());
     
     for (auto &channel : analogOutputChannels) {
@@ -298,18 +309,18 @@ void Device::prepareAnalogOutputs(WriteBuffer &writeBuffer) {
         channel->addNewValueNotification(boost::make_shared<VariableCallbackNotification>(callback));
     }
     
-    updateAnalogOutputs(writeBuffer);
+    updateAnalogOutputs(configBuffer);
 }
 
 
-void Device::updateAnalogOutputs(WriteBuffer &writeBuffer, bool active) {
+void Device::updateAnalogOutputs(WriteBuffer &configBuffer, bool active) {
     for (auto &channel : analogOutputChannels) {
-        writeBuffer.append(channel->getCanonicalLineName(), (active ? channel->getValue() : 0.0));
+        configBuffer.append(channel->getCanonicalLineName(), (active ? channel->getValue() : 0.0));
     }
 }
 
 
-void Device::prepareDigitalInputs(WriteBuffer &writeBuffer) {
+void Device::prepareDigitalInputs(WriteBuffer &configBuffer) {
     auto dioInhibit = ~std::uint32_t(0);
     
     for (auto &channel : digitalInputChannels) {
@@ -317,17 +328,17 @@ void Device::prepareDigitalInputs(WriteBuffer &writeBuffer) {
         dioInhibit ^= (1 << channel->getDIOIndex());
     }
     
-    writeBuffer.append("DIO_INHIBIT", dioInhibit);
+    configBuffer.append("DIO_INHIBIT", dioInhibit);
     if (deviceInfo->hasFlexibleIO()) {
-        writeBuffer.append("DIO_ANALOG_ENABLE", 0);
+        configBuffer.append("DIO_ANALOG_ENABLE", 0);
     }
-    writeBuffer.append("DIO_DIRECTION", 0);
+    configBuffer.append("DIO_DIRECTION", 0);
     
-    readBuffer.append("DIO_STATE");
+    inputBuffer.append("DIO_STATE");
 }
 
 
-void Device::prepareDigitalOutputs(WriteBuffer &writeBuffer) {
+void Device::prepareDigitalOutputs(WriteBuffer &configBuffer) {
     boost::weak_ptr<Device> weakThis(component_shared_from_this<Device>());
     
     for (auto &channel : digitalOutputChannels) {
@@ -348,11 +359,11 @@ void Device::prepareDigitalOutputs(WriteBuffer &writeBuffer) {
         channel->addNewValueNotification(boost::make_shared<VariableCallbackNotification>(callback));
     }
     
-    updateDigitalOutputs(writeBuffer);
+    updateDigitalOutputs(configBuffer);
 }
 
 
-void Device::updateDigitalOutputs(WriteBuffer &writeBuffer, bool active) {
+void Device::updateDigitalOutputs(WriteBuffer &configBuffer, bool active) {
     auto dioInhibit = ~std::uint32_t(0);
     auto dioDirection = std::uint32_t(0);
     auto dioState = std::uint32_t(0);
@@ -366,12 +377,35 @@ void Device::updateDigitalOutputs(WriteBuffer &writeBuffer, bool active) {
         }
     }
     
-    writeBuffer.append("DIO_INHIBIT", dioInhibit);
+    configBuffer.append("DIO_INHIBIT", dioInhibit);
     if (deviceInfo->hasFlexibleIO()) {
-        writeBuffer.append("DIO_ANALOG_ENABLE", 0);
+        configBuffer.append("DIO_ANALOG_ENABLE", 0);
     }
-    writeBuffer.append("DIO_DIRECTION", dioDirection);
-    writeBuffer.append("DIO_STATE", dioState);
+    configBuffer.append("DIO_DIRECTION", dioDirection);
+    configBuffer.append("DIO_STATE", dioState);
+}
+
+
+void Device::prepareCounters(WriteBuffer &configBuffer) {
+    for (auto &channel : counterChannels) {
+        reserveLine(channel);
+        const auto prefix = channel->getCanonicalLineName() + "_EF_";
+        
+        configBuffer.append(prefix + "ENABLE", 0);
+        configBuffer.append(prefix + "INDEX", 7);
+        configBuffer.append(prefix + "ENABLE", 1);
+        
+        inputBuffer.append(prefix + "READ_A");
+    }
+}
+
+
+bool Device::resetCounters() {
+    ReadBuffer resetBuffer;
+    for (auto &channel : counterChannels) {
+        resetBuffer.append(channel->getCanonicalLineName() + "_EF_READ_A_AND_RESET");
+    }
+    return !logError(resetBuffer.read(handle), "Cannot reset counters on LJM device");
 }
 
 
@@ -407,12 +441,12 @@ void Device::readInputs() {
         return;
     }
     
-    if (logError(readBuffer.read(handle), "Cannot read inputs from LJM device")) {
+    if (logError(inputBuffer.read(handle), "Cannot read inputs from LJM device")) {
         return;
     }
     
     const auto currentTime = clock->getCurrentTimeUS();
-    auto values = readBuffer.getValues();
+    auto values = inputBuffer.getValues();
     
     if (haveAnalogInputs()) {
         for (auto &channel : analogInputChannels) {
@@ -424,6 +458,12 @@ void Device::readInputs() {
         const auto dioState = std::uint32_t(values.next());
         for (auto &channel : digitalInputChannels) {
             channel->setValue(bool(dioState & (1 << channel->getDIOIndex())), currentTime);
+        }
+    }
+    
+    if (haveCounters()) {
+        for (auto &channel : counterChannels) {
+            channel->setValue(std::uint32_t(values.next()), currentTime);
         }
     }
 }
