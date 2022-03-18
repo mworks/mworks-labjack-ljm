@@ -130,14 +130,6 @@ class T7DeviceInfo : public DeviceInfo {
         return (line - static_cast<int>(PhysicalLine::DIO0));
     }
     
-    bool hasFlexibleIO() const override {
-        return false;
-    }
-    
-    bool isFlexibleIO(int line) const override {
-        return false;  // No flexible I/O lines on T7
-    }
-    
     bool isHighSpeedCounter(int line) const override {
         return isInRange<PhysicalLine::CIO0, PhysicalLine::CIO3>(line);
     }
@@ -160,17 +152,9 @@ class T4DeviceInfo : public DeviceInfo {
         AIN1,
         AIN2,
         AIN3,
-        AIN4,
-        AIN5,
-        AIN6,
-        AIN7,
-        AIN8,
-        AIN9,
-        AIN10,
-        AIN11,
-        AIN_MAX = AIN11,
+        AIN_MAX = AIN3,
         
-        FIO_MIN = AIN4,
+        FIO_MIN,
         FIO4 = FIO_MIN,
         FIO5,
         FIO6,
@@ -244,14 +228,6 @@ class T4DeviceInfo : public DeviceInfo {
     
     int getDIOIndex(int line) const override {
         return (line - static_cast<int>(PhysicalLine::DIO4) + 4);  // No DIO0-3 on T4
-    }
-    
-    bool hasFlexibleIO() const override {
-        return true;
-    }
-    
-    bool isFlexibleIO(int line) const override {
-        return isInRange<PhysicalLine::AIN4, PhysicalLine::AIN11>(line);
     }
     
     bool isHighSpeedCounter(int line) const override {
@@ -368,14 +344,6 @@ bool T4DeviceInfo::parseLineName(const std::string &name, int &line) const {
         { "AIN1", PhysicalLine::AIN1 },
         { "AIN2", PhysicalLine::AIN2 },
         { "AIN3", PhysicalLine::AIN3 },
-        { "AIN4", PhysicalLine::AIN4 },
-        { "AIN5", PhysicalLine::AIN5 },
-        { "AIN6", PhysicalLine::AIN6 },
-        { "AIN7", PhysicalLine::AIN7 },
-        { "AIN8", PhysicalLine::AIN8 },
-        { "AIN9", PhysicalLine::AIN9 },
-        { "AIN10", PhysicalLine::AIN10 },
-        { "AIN11", PhysicalLine::AIN11 },
         { "FIO4", PhysicalLine::FIO4 },
         { "FIO5", PhysicalLine::FIO5 },
         { "FIO6", PhysicalLine::FIO6 },

@@ -268,22 +268,9 @@ void Device::reserveLine(const boost::shared_ptr<SingleLineChannel> &channel) {
 
 
 void Device::prepareAnalogInputs(WriteBuffer &configBuffer) {
-    auto dioInhibit = ~std::uint32_t(0);
-    auto dioAnalogEnable = std::uint32_t(0);
-    
     for (auto &channel : analogInputChannels) {
         reserveLine(channel);
         inputBuffer.append(channel->getCanonicalLineName());
-        if (channel->isFlexibleIO()) {
-            auto dioIndex = channel->getDIOIndex();
-            dioInhibit ^= (1 << dioIndex);
-            dioAnalogEnable |= (1 << dioIndex);
-        }
-    }
-    
-    if (deviceInfo->hasFlexibleIO()) {
-        configBuffer.append("DIO_INHIBIT", dioInhibit);
-        configBuffer.append("DIO_ANALOG_ENABLE", dioAnalogEnable);
     }
 }
 
@@ -329,9 +316,6 @@ void Device::prepareDigitalInputs(WriteBuffer &configBuffer) {
     }
     
     configBuffer.append("DIO_INHIBIT", dioInhibit);
-    if (deviceInfo->hasFlexibleIO()) {
-        configBuffer.append("DIO_ANALOG_ENABLE", 0);
-    }
     configBuffer.append("DIO_DIRECTION", 0);
     
     inputBuffer.append("DIO_STATE");
@@ -378,9 +362,6 @@ void Device::updateDigitalOutputs(WriteBuffer &configBuffer, bool active) {
     }
     
     configBuffer.append("DIO_INHIBIT", dioInhibit);
-    if (deviceInfo->hasFlexibleIO()) {
-        configBuffer.append("DIO_ANALOG_ENABLE", 0);
-    }
     configBuffer.append("DIO_DIRECTION", dioDirection);
     configBuffer.append("DIO_STATE", dioState);
 }

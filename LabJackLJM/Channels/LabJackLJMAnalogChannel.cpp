@@ -18,23 +18,12 @@ void AnalogInputChannel::describeComponent(ComponentInfo &info) {
 }
 
 
-AnalogInputChannel::AnalogInputChannel(const ParameterValueMap &parameters) :
-    AnalogChannel(parameters),
-    flexibleIO(false),
-    dioIndex(-1)
-{ }
-
-
 int AnalogInputChannel::resolveLine(const DeviceInfo &deviceInfo) {
     auto line = AnalogChannel::resolveLine(deviceInfo);
     if (!(deviceInfo.isAIN(line))) {
         throw SimpleException(M_IODEVICE_MESSAGE_DOMAIN, boost::format("%s is not an analog input line") % lineName);
     }
     canonicalLineName = (boost::format("AIN%d") % deviceInfo.getAINIndex(line)).str();
-    flexibleIO = deviceInfo.isFlexibleIO(line);
-    if (flexibleIO) {
-        dioIndex = deviceInfo.getDIOIndex(line);
-    }
     return line;
 }
 

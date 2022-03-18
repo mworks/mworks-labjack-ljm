@@ -32,9 +32,6 @@ public:
     virtual int getAINIndex(int line) const = 0;
     virtual int getDIOIndex(int line) const = 0;
     
-    virtual bool hasFlexibleIO() const = 0;
-    virtual bool isFlexibleIO(int line) const = 0;
-    
     virtual bool isHighSpeedCounter(int line) const = 0;
     
 private:

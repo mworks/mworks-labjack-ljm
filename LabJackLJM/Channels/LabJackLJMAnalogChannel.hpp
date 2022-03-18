@@ -28,22 +28,15 @@ class AnalogInputChannel : public AnalogChannel {
 public:
     static void describeComponent(ComponentInfo &info);
     
-    explicit AnalogInputChannel(const ParameterValueMap &parameters);
+    using AnalogChannel::AnalogChannel;
     
     int resolveLine(const DeviceInfo &deviceInfo) override;
-    
-    bool isFlexibleIO() const { return flexibleIO; }
-    int getDIOIndex() const { return dioIndex; }
     
     void setValue(double value, MWTime time) const {
         // Analog signals are expected to be continuous, so update the variable
         // even if the value hasn't changed
         valueVar->setValue(Datum(value), time);
     }
-    
-private:
-    bool flexibleIO;
-    int dioIndex;
     
 };
 
