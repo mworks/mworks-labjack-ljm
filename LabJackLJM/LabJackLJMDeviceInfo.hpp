@@ -22,7 +22,10 @@ public:
     
     virtual ~DeviceInfo() { }
     
-    int getLineForName(const std::string &name) const;
+    bool reserveLine(int line);
+    int reserveLineForName(const std::string &name);
+    
+    std::string getCanonicalLineName(int line) const;
     
     virtual bool isDAC(int line) const = 0;
     virtual bool isAIN(int line) const = 0;
@@ -33,9 +36,12 @@ public:
     virtual int getDIOIndex(int line) const = 0;
     
     virtual bool isHighSpeedCounter(int line) const = 0;
+    virtual bool isQuadraturePhaseA(int line) const = 0;
     
 private:
     virtual bool parseLineName(const std::string &name, int &line) const = 0;
+    
+    std::set<int> linesInUse;
     
 };
 

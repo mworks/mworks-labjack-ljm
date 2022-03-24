@@ -18,13 +18,11 @@ void AnalogInputChannel::describeComponent(ComponentInfo &info) {
 }
 
 
-int AnalogInputChannel::resolveLine(const DeviceInfo &deviceInfo) {
-    auto line = AnalogChannel::resolveLine(deviceInfo);
-    if (!(deviceInfo.isAIN(line))) {
+void AnalogInputChannel::resolveLine(DeviceInfo &deviceInfo) {
+    AnalogChannel::resolveLine(deviceInfo);
+    if (!(deviceInfo.isAIN(getLine()))) {
         throw SimpleException(M_IODEVICE_MESSAGE_DOMAIN, boost::format("%s is not an analog input line") % lineName);
     }
-    canonicalLineName = (boost::format("AIN%d") % deviceInfo.getAINIndex(line)).str();
-    return line;
 }
 
 
@@ -34,13 +32,11 @@ void AnalogOutputChannel::describeComponent(ComponentInfo &info) {
 }
 
 
-int AnalogOutputChannel::resolveLine(const DeviceInfo &deviceInfo) {
-    auto line = AnalogChannel::resolveLine(deviceInfo);
-    if (!(deviceInfo.isDAC(line))) {
+void AnalogOutputChannel::resolveLine(DeviceInfo &deviceInfo) {
+    AnalogChannel::resolveLine(deviceInfo);
+    if (!(deviceInfo.isDAC(getLine()))) {
         throw SimpleException(M_IODEVICE_MESSAGE_DOMAIN, boost::format("%s is not an analog output line") % lineName);
     }
-    canonicalLineName = (boost::format("DAC%d") % deviceInfo.getDACIndex(line)).str();
-    return line;
 }
 
 

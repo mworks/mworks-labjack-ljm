@@ -7,8 +7,6 @@
 //
 
 #include "LabJackLJMDevice.hpp"
-#include "LabJackLJMAnalogChannel.hpp"
-#include "LabJackLJMDigitalChannel.hpp"
 
 
 BEGIN_NAMESPACE_MW_LABJACK_LJM
@@ -22,6 +20,7 @@ class Plugin : public mw::Plugin {
         registry->registerFactory<StandardComponentFactory, DigitalInputChannel>();
         registry->registerFactory<StandardComponentFactory, DigitalOutputChannel>();
         registry->registerFactory<StandardComponentFactory, CounterChannel>();
+        registry->registerFactory<StandardComponentFactory, QuadratureInputChannel>();
     }
 };
 

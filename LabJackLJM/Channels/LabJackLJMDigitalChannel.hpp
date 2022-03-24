@@ -20,7 +20,7 @@ class DigitalChannel : public SingleLineChannel {
 public:
     explicit DigitalChannel(const ParameterValueMap &parameters);
     
-    int resolveLine(const DeviceInfo &deviceInfo) override;
+    void resolveLine(DeviceInfo &deviceInfo) override;
     
     int getDIOIndex() const { return dioIndex; }
     
@@ -59,24 +59,6 @@ public:
     
     bool getValue() const {
         return valueVar->getValue().getBool();
-    }
-    
-};
-
-
-class CounterChannel : public DigitalChannel {
-    
-public:
-    static void describeComponent(ComponentInfo &info);
-    
-    using DigitalChannel::DigitalChannel;
-    
-    int resolveLine(const DeviceInfo &deviceInfo) override;
-    
-    void setValue(long long value, MWTime time) const {
-        if (valueVar->getValue().getInteger() != value) {
-            valueVar->setValue(Datum(value), time);
-        }
     }
     
 };

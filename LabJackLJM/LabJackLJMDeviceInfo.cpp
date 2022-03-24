@@ -134,6 +134,12 @@ class T7DeviceInfo : public DeviceInfo {
         return isInRange<PhysicalLine::CIO0, PhysicalLine::CIO3>(line);
     }
     
+    bool isQuadraturePhaseA(int line) const override {
+        return (line == static_cast<int>(PhysicalLine::DIO0) ||
+                line == static_cast<int>(PhysicalLine::DIO2) ||
+                line == static_cast<int>(PhysicalLine::DIO6));
+    }
+    
     bool parseLineName(const std::string &name, int &line) const override;
     
 };
@@ -234,6 +240,12 @@ class T4DeviceInfo : public DeviceInfo {
         return isInRange<PhysicalLine::CIO0, PhysicalLine::CIO3>(line);
     }
     
+    bool isQuadraturePhaseA(int line) const override {
+        return (line == static_cast<int>(PhysicalLine::DIO4) ||
+                line == static_cast<int>(PhysicalLine::DIO6) ||
+                line == static_cast<int>(PhysicalLine::DIO8));
+    }
+    
     bool parseLineName(const std::string &name, int &line) const override;
     
 };
@@ -251,13 +263,35 @@ std::unique_ptr<DeviceInfo> DeviceInfo::getDeviceInfo(int deviceType) {
 }
 
 
-int DeviceInfo::getLineForName(const std::string &name) const {
+bool DeviceInfo::reserveLine(int line) {
+    return linesInUse.insert(line).second;
+}
+
+
+int DeviceInfo::reserveLineForName(const std::string &name) {
     int line;
-    if (parseLineName(boost::algorithm::to_upper_copy(name), line)) {
-        return line;
+    if (!parseLineName(boost::algorithm::to_upper_copy(name), line)) {
+        throw SimpleException(M_IODEVICE_MESSAGE_DOMAIN,
+                              boost::format("Invalid line name for current LabJack LJM device: \"%s\"") % name);
     }
-    throw SimpleException(M_IODEVICE_MESSAGE_DOMAIN,
-                          boost::format("Invalid line name for current LabJack LJM device: \"%s\"") % name);
+    if (!reserveLine(line)) {
+        throw SimpleException(M_IODEVICE_MESSAGE_DOMAIN, boost::format("Line %s is already in use") % name);
+    }
+    return line;
+}
+
+
+std::string DeviceInfo::getCanonicalLineName(int line) const {
+    if (isDAC(line)) {
+        return "DAC" + std::to_string(getDACIndex(line));
+    }
+    if (isAIN(line)) {
+        return "AIN" + std::to_string(getAINIndex(line));
+    }
+    if (isDIO(line)) {
+        return "DIO" + std::to_string(getDIOIndex(line));
+    }
+    return "";
 }
 
 

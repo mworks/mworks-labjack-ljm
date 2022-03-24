@@ -11,6 +11,8 @@
 
 #include "LabJackLJMAnalogChannel.hpp"
 #include "LabJackLJMDigitalChannel.hpp"
+#include "LabJackLJMCounterChannel.hpp"
+#include "LabJackLJMQuadratureChannel.hpp"
 
 
 BEGIN_NAMESPACE_MW_LABJACK_LJM
@@ -65,12 +67,6 @@ private:
     };
     
     static int convertNameToAddress(const std::string &name, int &type);
-    static int convertNameToAddress(const std::string &name) {
-        int type;
-        return convertNameToAddress(name, type);
-    }
-    
-    void reserveLine(const boost::shared_ptr<SingleLineChannel> &channel);
     
     bool haveAnalogInputs() const { return !(analogInputChannels.empty()); }
     void prepareAnalogInputs(WriteBuffer &configBuffer);
@@ -88,9 +84,15 @@ private:
     
     bool haveCounters() const { return !(counterChannels.empty()); }
     void prepareCounters(WriteBuffer &configBuffer);
-    bool resetCounters();
+    void updateCounters(WriteBuffer &configBuffer, bool active = false);
     
-    bool haveInputs() const { return (haveAnalogInputs() || haveDigitalInputs() || haveCounters()); }
+    bool haveQuadratureInputs() const { return !(quadratureInputChannels.empty()); }
+    void prepareQuadratureInputs(WriteBuffer &configBuffer);
+    void updateQuadratureInputs(WriteBuffer &configBuffer, bool active = false);
+    
+    bool haveInputs() const {
+        return (haveAnalogInputs() || haveDigitalInputs() || haveCounters() || haveQuadratureInputs());
+    }
     void startReadInputsTask();
     void stopReadInputsTask();
     void readInputs();
@@ -104,15 +106,13 @@ private:
     
     std::vector<boost::shared_ptr<AnalogInputChannel>> analogInputChannels;
     std::vector<boost::shared_ptr<AnalogOutputChannel>> analogOutputChannels;
-    
     std::vector<boost::shared_ptr<DigitalInputChannel>> digitalInputChannels;
     std::vector<boost::shared_ptr<DigitalOutputChannel>> digitalOutputChannels;
-    
     std::vector<boost::shared_ptr<CounterChannel>> counterChannels;
+    std::vector<boost::shared_ptr<QuadratureInputChannel>> quadratureInputChannels;
     
     int handle;
     std::unique_ptr<DeviceInfo> deviceInfo;
-    std::set<int> linesInUse;
     
     ReadBuffer inputBuffer;
     boost::shared_ptr<ScheduleTask> readInputsTask;

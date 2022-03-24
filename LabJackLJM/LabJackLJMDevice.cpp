@@ -60,25 +60,19 @@ void Device::addChild(std::map<std::string, std::string> parameters,
 {
     if (auto channel = boost::dynamic_pointer_cast<AnalogInputChannel>(child)) {
         analogInputChannels.emplace_back(std::move(channel));
-        return;
-    }
-    if (auto channel = boost::dynamic_pointer_cast<AnalogOutputChannel>(child)) {
+    } else if (auto channel = boost::dynamic_pointer_cast<AnalogOutputChannel>(child)) {
         analogOutputChannels.emplace_back(std::move(channel));
-        return;
-    }
-    if (auto channel = boost::dynamic_pointer_cast<DigitalInputChannel>(child)) {
+    } else if (auto channel = boost::dynamic_pointer_cast<DigitalInputChannel>(child)) {
         digitalInputChannels.emplace_back(std::move(channel));
-        return;
-    }
-    if (auto channel = boost::dynamic_pointer_cast<DigitalOutputChannel>(child)) {
+    } else if (auto channel = boost::dynamic_pointer_cast<DigitalOutputChannel>(child)) {
         digitalOutputChannels.emplace_back(std::move(channel));
-        return;
-    }
-    if (auto channel = boost::dynamic_pointer_cast<CounterChannel>(child)) {
+    } else if (auto channel = boost::dynamic_pointer_cast<CounterChannel>(child)) {
         counterChannels.emplace_back(std::move(channel));
-        return;
+    } else if (auto channel = boost::dynamic_pointer_cast<QuadratureInputChannel>(child)) {
+        quadratureInputChannels.emplace_back(std::move(channel));
+    } else {
+        throw SimpleException(M_IODEVICE_MESSAGE_DOMAIN, "Invalid channel type for LabJack LJM device");
     }
-    throw SimpleException(M_IODEVICE_MESSAGE_DOMAIN, "Invalid channel type for LabJack LJM device");
 }
 
 
@@ -123,6 +117,9 @@ bool Device::initialize() {
     if (haveCounters()) {
         prepareCounters(configBuffer);
     }
+    if (haveQuadratureInputs()) {
+        prepareQuadratureInputs(configBuffer);
+    }
     
     if (logError(configBuffer.write(handle), "Cannot configure LJM device")) {
         return false;
@@ -136,10 +133,6 @@ bool Device::startDeviceIO() {
     lock_guard lock(mutex);
     
     if (!running) {
-        if (haveCounters() && !resetCounters()) {
-            return false;
-        }
-        
         WriteBuffer configBuffer;
         
         if (haveAnalogOutputs()) {
@@ -147,6 +140,12 @@ bool Device::startDeviceIO() {
         }
         if (haveDigitalOutputs()) {
             updateDigitalOutputs(configBuffer, true);
+        }
+        if (haveCounters()) {
+            updateCounters(configBuffer, true);
+        }
+        if (haveQuadratureInputs()) {
+            updateQuadratureInputs(configBuffer, true);
         }
         
         if (logError(configBuffer.write(handle), "Cannot start LJM device")) {
@@ -174,11 +173,17 @@ bool Device::stopDeviceIO() {
         
         WriteBuffer configBuffer;
         
-        if (haveAnalogOutputs()) {
-            updateAnalogOutputs(configBuffer);
+        if (haveQuadratureInputs()) {
+            updateQuadratureInputs(configBuffer);
+        }
+        if (haveCounters()) {
+            updateCounters(configBuffer);
         }
         if (haveDigitalOutputs()) {
             updateDigitalOutputs(configBuffer);
+        }
+        if (haveAnalogOutputs()) {
+            updateAnalogOutputs(configBuffer);
         }
         
         if (logError(configBuffer.write(handle), "Cannot stop LJM device")) {
@@ -258,18 +263,9 @@ int Device::convertNameToAddress(const std::string &name, int &type) {
 }
 
 
-void Device::reserveLine(const boost::shared_ptr<SingleLineChannel> &channel) {
-    auto line = channel->resolveLine(*deviceInfo);
-    if (!(linesInUse.insert(line).second)) {
-        throw SimpleException(M_IODEVICE_MESSAGE_DOMAIN,
-                              boost::format("Line %s is already in use") % channel->getLineName());
-    }
-}
-
-
 void Device::prepareAnalogInputs(WriteBuffer &configBuffer) {
     for (auto &channel : analogInputChannels) {
-        reserveLine(channel);
+        channel->resolveLine(*deviceInfo);
         inputBuffer.append(channel->getCanonicalLineName());
     }
 }
@@ -279,7 +275,7 @@ void Device::prepareAnalogOutputs(WriteBuffer &configBuffer) {
     boost::weak_ptr<Device> weakThis(component_shared_from_this<Device>());
     
     for (auto &channel : analogOutputChannels) {
-        reserveLine(channel);
+        channel->resolveLine(*deviceInfo);
         int type;
         auto address = convertNameToAddress(channel->getCanonicalLineName(), type);
         // It's OK to capture channel by reference, because it will remain alive (in
@@ -311,7 +307,7 @@ void Device::prepareDigitalInputs(WriteBuffer &configBuffer) {
     auto dioInhibit = ~std::uint32_t(0);
     
     for (auto &channel : digitalInputChannels) {
-        reserveLine(channel);
+        channel->resolveLine(*deviceInfo);
         dioInhibit ^= (1 << channel->getDIOIndex());
     }
     
@@ -326,7 +322,7 @@ void Device::prepareDigitalOutputs(WriteBuffer &configBuffer) {
     boost::weak_ptr<Device> weakThis(component_shared_from_this<Device>());
     
     for (auto &channel : digitalOutputChannels) {
-        reserveLine(channel);
+        channel->resolveLine(*deviceInfo);
         int type;
         auto address = convertNameToAddress(channel->getCanonicalLineName(), type);
         // It's OK to capture channel by reference, because it will remain alive (in
@@ -369,24 +365,45 @@ void Device::updateDigitalOutputs(WriteBuffer &configBuffer, bool active) {
 
 void Device::prepareCounters(WriteBuffer &configBuffer) {
     for (auto &channel : counterChannels) {
-        reserveLine(channel);
-        const auto prefix = channel->getCanonicalLineName() + "_EF_";
+        channel->resolveLine(*deviceInfo);
+        auto &line = channel->getCanonicalLineName();
         
-        configBuffer.append(prefix + "ENABLE", 0);
-        configBuffer.append(prefix + "INDEX", 7);
-        configBuffer.append(prefix + "ENABLE", 1);
+        configBuffer.append(line + "_EF_ENABLE", 0);
+        configBuffer.append(line + "_EF_INDEX", 7);
         
-        inputBuffer.append(prefix + "READ_A");
+        inputBuffer.append(line + "_EF_READ_A");
     }
 }
 
 
-bool Device::resetCounters() {
-    ReadBuffer resetBuffer;
+void Device::updateCounters(WriteBuffer &configBuffer, bool active) {
     for (auto &channel : counterChannels) {
-        resetBuffer.append(channel->getCanonicalLineName() + "_EF_READ_A_AND_RESET");
+        configBuffer.append(channel->getCanonicalLineName() + "_EF_ENABLE", active);
     }
-    return !logError(resetBuffer.read(handle), "Cannot reset counters on LJM device");
+}
+
+
+void Device::prepareQuadratureInputs(WriteBuffer &configBuffer) {
+    for (auto &channel : quadratureInputChannels) {
+        channel->resolveLines(*deviceInfo);
+        auto &line1 = channel->getCanonicalFirstLineName();
+        auto &line2 = channel->getCanonicalSecondLineName();
+        
+        configBuffer.append(line1 + "_EF_ENABLE", 0);
+        configBuffer.append(line2 + "_EF_ENABLE", 0);
+        configBuffer.append(line1 + "_EF_INDEX", 10);
+        configBuffer.append(line2 + "_EF_INDEX", 10);
+        
+        inputBuffer.append(line1 + "_EF_READ_A");
+    }
+}
+
+
+void Device::updateQuadratureInputs(WriteBuffer &configBuffer, bool active) {
+    for (auto &channel : quadratureInputChannels) {
+        configBuffer.append(channel->getCanonicalFirstLineName()  + "_EF_ENABLE", active);
+        configBuffer.append(channel->getCanonicalSecondLineName() + "_EF_ENABLE", active);
+    }
 }
 
 
@@ -445,6 +462,21 @@ void Device::readInputs() {
     if (haveCounters()) {
         for (auto &channel : counterChannels) {
             channel->setValue(std::uint32_t(values.next()), currentTime);
+        }
+    }
+    
+    if (haveQuadratureInputs()) {
+        for (auto &channel : quadratureInputChannels) {
+            //
+            // The count is transmitted as an unsigned, 32-bit integer, but it's actually signed,
+            // so we need to cast twice.
+            //
+            // Note that the result of the second cast is technically implementation-defined until
+            // C++20.  See the section "Integral conversions" of the following for details:
+            //
+            //   https://en.cppreference.com/w/cpp/language/implicit_conversion
+            //
+            channel->setValue(std::int32_t(std::uint32_t(values.next())), currentTime);
         }
     }
 }

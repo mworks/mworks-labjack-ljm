@@ -12,31 +12,60 @@
 BEGIN_NAMESPACE_MW_LABJACK_LJM
 
 
+const std::string Channel::VALUE("value");
+
+
+void Channel::describeComponent(ComponentInfo &info) {
+    Component::describeComponent(info);
+    info.addParameter(VALUE);
+}
+
+
 Channel::Channel(const ParameterValueMap &parameters) :
-    Component(parameters)
+    Component(parameters),
+    valueVar(parameters[VALUE])
 { }
 
 
 const std::string SingleLineChannel::LINE("line");
-const std::string SingleLineChannel::VALUE("value");
 
 
 void SingleLineChannel::describeComponent(ComponentInfo &info) {
     Channel::describeComponent(info);
     info.addParameter(LINE);
-    info.addParameter(VALUE);
 }
 
 
 SingleLineChannel::SingleLineChannel(const ParameterValueMap &parameters) :
     Channel(parameters),
     lineName(variableOrText(parameters[LINE])->getValue().getString()),
-    valueVar(parameters[VALUE])
+    line(-1)
 { }
 
 
-int SingleLineChannel::resolveLine(const DeviceInfo &deviceInfo) {
-    return deviceInfo.getLineForName(lineName);
+void SingleLineChannel::resolveLine(DeviceInfo &deviceInfo) {
+    line = deviceInfo.reserveLineForName(lineName);
+    canonicalLineName = deviceInfo.getCanonicalLineName(line);
+}
+
+
+const std::string MultipleLineChannel::FIRST_LINE("first_line");
+
+
+void MultipleLineChannel::describeComponent(ComponentInfo &info) {
+    Channel::describeComponent(info);
+    info.addParameter(FIRST_LINE);
+}
+
+
+MultipleLineChannel::MultipleLineChannel(const ParameterValueMap &parameters) :
+    Channel(parameters),
+    firstLineName(variableOrText(parameters[FIRST_LINE])->getValue().getString())
+{ }
+
+
+void MultipleLineChannel::resolveLines(DeviceInfo &deviceInfo) {
+    firstLine = deviceInfo.reserveLineForName(firstLineName);
 }
 
 

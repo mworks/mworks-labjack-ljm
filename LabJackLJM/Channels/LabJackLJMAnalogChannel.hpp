@@ -30,7 +30,7 @@ public:
     
     using AnalogChannel::AnalogChannel;
     
-    int resolveLine(const DeviceInfo &deviceInfo) override;
+    void resolveLine(DeviceInfo &deviceInfo) override;
     
     void setValue(double value, MWTime time) const {
         // Analog signals are expected to be continuous, so update the variable
@@ -48,7 +48,7 @@ public:
     
     using AnalogChannel::AnalogChannel;
     
-    int resolveLine(const DeviceInfo &deviceInfo) override;
+    void resolveLine(DeviceInfo &deviceInfo) override;
     
     void addNewValueNotification(const boost::shared_ptr<VariableNotification> &notification) const {
         valueVar->addNotification(notification);
