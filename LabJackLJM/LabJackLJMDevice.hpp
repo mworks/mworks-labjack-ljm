@@ -50,6 +50,7 @@ private:
     };
     
     struct WriteBuffer : IOBuffer {
+        void setValue(std::size_t index, double value) { values.at(index) = value; }
         int write(int handle);
     };
     
@@ -75,10 +76,10 @@ private:
     void prepareAnalogOutputs(WriteBuffer &configBuffer);
     void updateAnalogOutputs(WriteBuffer &configBuffer, bool active = false);
     
-    bool haveDigitalInputs() const { return !(digitalInputChannels.empty()); }
+    bool haveDigitalInputs() const { return !(digitalInputChannels.empty() && wordInputChannels.empty()); }
     void prepareDigitalInputs(WriteBuffer &configBuffer);
     
-    bool haveDigitalOutputs() const { return !(digitalOutputChannels.empty()); }
+    bool haveDigitalOutputs() const { return !(digitalOutputChannels.empty() && wordOutputChannels.empty()); }
     void prepareDigitalOutputs(WriteBuffer &configBuffer);
     void updateDigitalOutputs(WriteBuffer &configBuffer, bool active = false);
     
@@ -108,6 +109,8 @@ private:
     std::vector<boost::shared_ptr<AnalogOutputChannel>> analogOutputChannels;
     std::vector<boost::shared_ptr<DigitalInputChannel>> digitalInputChannels;
     std::vector<boost::shared_ptr<DigitalOutputChannel>> digitalOutputChannels;
+    std::vector<boost::shared_ptr<WordInputChannel>> wordInputChannels;
+    std::vector<boost::shared_ptr<WordOutputChannel>> wordOutputChannels;
     std::vector<boost::shared_ptr<CounterChannel>> counterChannels;
     std::vector<boost::shared_ptr<QuadratureInputChannel>> quadratureInputChannels;
     

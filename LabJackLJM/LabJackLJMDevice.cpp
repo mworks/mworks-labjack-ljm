@@ -66,6 +66,10 @@ void Device::addChild(std::map<std::string, std::string> parameters,
         digitalInputChannels.emplace_back(std::move(channel));
     } else if (auto channel = boost::dynamic_pointer_cast<DigitalOutputChannel>(child)) {
         digitalOutputChannels.emplace_back(std::move(channel));
+    } else if (auto channel = boost::dynamic_pointer_cast<WordInputChannel>(child)) {
+        wordInputChannels.emplace_back(std::move(channel));
+    } else if (auto channel = boost::dynamic_pointer_cast<WordOutputChannel>(child)) {
+        wordOutputChannels.emplace_back(std::move(channel));
     } else if (auto channel = boost::dynamic_pointer_cast<CounterChannel>(child)) {
         counterChannels.emplace_back(std::move(channel));
     } else if (auto channel = boost::dynamic_pointer_cast<QuadratureInputChannel>(child)) {
@@ -306,7 +310,12 @@ void Device::prepareDigitalInputs(WriteBuffer &configBuffer) {
     
     for (auto &channel : digitalInputChannels) {
         channel->resolveLine(*deviceInfo);
-        dioInhibit ^= (1 << channel->getDIOIndex());
+        dioInhibit ^= channel->getDIOBitMask();
+    }
+    
+    for (auto &channel : wordInputChannels) {
+        channel->resolveLines(*deviceInfo);
+        dioInhibit ^= channel->getDIOBitMask();
     }
     
     configBuffer.append("DIO_INHIBIT", dioInhibit);
@@ -335,6 +344,31 @@ void Device::prepareDigitalOutputs(WriteBuffer &configBuffer) {
         channel->addNewValueNotification(boost::make_shared<VariableCallbackNotification>(callback));
     }
     
+    for (auto &channel : wordOutputChannels) {
+        channel->resolveLines(*deviceInfo);
+        auto firstLineDIOIndex = channel->getFirstLineDIOIndex();
+        auto dioBitMask = channel->getDIOBitMask();
+        
+        WriteBuffer updateBuffer;
+        updateBuffer.append("DIO_INHIBIT", ~dioBitMask);
+        updateBuffer.append("DIO_STATE");
+        
+        auto callback = [weakThis,
+                         updateBuffer = std::move(updateBuffer),
+                         dioBitMask,
+                         firstLineDIOIndex](const Datum &data, MWTime time) mutable
+        {
+            if (auto sharedThis = weakThis.lock()) {
+                lock_guard lock(sharedThis->mutex);
+                if (sharedThis->running) {
+                    updateBuffer.setValue(1, dioBitMask & (std::uint32_t(data.getInteger()) << firstLineDIOIndex));
+                    logError(updateBuffer.write(sharedThis->handle), "Cannot set word output lines on LJM device");
+                }
+            }
+        };
+        channel->addNewValueNotification(boost::make_shared<VariableCallbackNotification>(callback));
+    }
+    
     updateDigitalOutputs(configBuffer);
 }
 
@@ -345,11 +379,20 @@ void Device::updateDigitalOutputs(WriteBuffer &configBuffer, bool active) {
     auto dioState = std::uint32_t(0);
     
     for (auto &channel : digitalOutputChannels) {
-        auto dioIndex = channel->getDIOIndex();
-        dioInhibit ^= (1 << dioIndex);
-        dioDirection |= (1 << dioIndex);
+        auto dioBitMask = channel->getDIOBitMask();
+        dioInhibit ^= dioBitMask;
+        dioDirection |= dioBitMask;
         if (active) {
-            dioState |= (channel->getValue() << dioIndex);
+            dioState |= (channel->getValue() << channel->getDIOIndex());
+        }
+    }
+    
+    for (auto &channel : wordOutputChannels) {
+        auto dioBitMask = channel->getDIOBitMask();
+        dioInhibit ^= dioBitMask;
+        dioDirection |= dioBitMask;
+        if (active) {
+            dioState |= dioBitMask & (std::uint32_t(channel->getValue()) << channel->getFirstLineDIOIndex());
         }
     }
     
@@ -451,7 +494,10 @@ void Device::readInputs() {
     if (haveDigitalInputs()) {
         const auto dioState = std::uint32_t(values.next());
         for (auto &channel : digitalInputChannels) {
-            channel->setValue(bool(dioState & (1 << channel->getDIOIndex())), currentTime);
+            channel->setValue(bool(dioState & channel->getDIOBitMask()), currentTime);
+        }
+        for (auto &channel : wordInputChannels) {
+            channel->setValue((dioState & channel->getDIOBitMask()) >> channel->getFirstLineDIOIndex(), currentTime);
         }
     }
     

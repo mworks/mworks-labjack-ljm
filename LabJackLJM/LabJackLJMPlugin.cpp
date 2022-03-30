@@ -19,6 +19,8 @@ class Plugin : public mw::Plugin {
         registry->registerFactory<StandardComponentFactory, AnalogOutputChannel>();
         registry->registerFactory<StandardComponentFactory, DigitalInputChannel>();
         registry->registerFactory<StandardComponentFactory, DigitalOutputChannel>();
+        registry->registerFactory<StandardComponentFactory, WordInputChannel>();
+        registry->registerFactory<StandardComponentFactory, WordOutputChannel>();
         registry->registerFactory<StandardComponentFactory, CounterChannel>();
         registry->registerFactory<StandardComponentFactory, QuadratureInputChannel>();
     }
