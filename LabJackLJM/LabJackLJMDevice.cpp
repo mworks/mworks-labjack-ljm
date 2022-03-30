@@ -278,13 +278,11 @@ void Device::prepareAnalogOutputs(WriteBuffer &configBuffer) {
         channel->resolveLine(*deviceInfo);
         int type;
         auto address = convertNameToAddress(channel->getCanonicalLineName(), type);
-        // It's OK to capture channel by reference, because it will remain alive (in
-        // analogOutputChannels) for as long as the device is alive
-        auto callback = [weakThis, address, type, &channel](const Datum &data, MWTime time) {
+        auto callback = [weakThis, address, type](const Datum &data, MWTime time) {
             if (auto sharedThis = weakThis.lock()) {
                 lock_guard lock(sharedThis->mutex);
                 if (sharedThis->running) {
-                    logError(LJM_eWriteAddress(sharedThis->handle, address, type, channel->getValue()),
+                    logError(LJM_eWriteAddress(sharedThis->handle, address, type, data.getFloat()),
                              "Cannot set analog output line on LJM device");
                 }
             }
@@ -325,13 +323,11 @@ void Device::prepareDigitalOutputs(WriteBuffer &configBuffer) {
         channel->resolveLine(*deviceInfo);
         int type;
         auto address = convertNameToAddress(channel->getCanonicalLineName(), type);
-        // It's OK to capture channel by reference, because it will remain alive (in
-        // digitalOutputChannels) for as long as the device is alive
-        auto callback = [weakThis, address, type, &channel](const Datum &data, MWTime time) {
+        auto callback = [weakThis, address, type](const Datum &data, MWTime time) {
             if (auto sharedThis = weakThis.lock()) {
                 lock_guard lock(sharedThis->mutex);
                 if (sharedThis->running) {
-                    logError(LJM_eWriteAddress(sharedThis->handle, address, type, channel->getValue()),
+                    logError(LJM_eWriteAddress(sharedThis->handle, address, type, data.getBool()),
                              "Cannot set digital output line on LJM device");
                 }
             }
