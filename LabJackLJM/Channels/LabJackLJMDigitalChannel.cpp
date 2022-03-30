@@ -21,7 +21,7 @@ DigitalChannel::DigitalChannel(const ParameterValueMap &parameters) :
 void DigitalChannel::resolveLine(DeviceInfo &deviceInfo) {
     SingleLineChannel::resolveLine(deviceInfo);
     if (!(deviceInfo.isDIO(getLine()))) {
-        throw SimpleException(M_IODEVICE_MESSAGE_DOMAIN, boost::format("%s is not a digital line") % lineName);
+        throw SimpleException(M_IODEVICE_MESSAGE_DOMAIN, boost::format("%s is not a digital line") % getLineName());
     }
     dioIndex = deviceInfo.getDIOIndex(getLine());
 }

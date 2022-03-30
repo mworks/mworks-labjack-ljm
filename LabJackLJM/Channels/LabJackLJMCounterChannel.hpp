@@ -25,8 +25,8 @@ public:
     void resolveLine(DeviceInfo &deviceInfo) override;
     
     void setValue(long long value, MWTime time) const {
-        if (valueVar->getValue().getInteger() != value) {
-            valueVar->setValue(Datum(value), time);
+        if (getValueVar()->getValue().getInteger() != value) {
+            getValueVar()->setValue(Datum(value), time);
         }
     }
     

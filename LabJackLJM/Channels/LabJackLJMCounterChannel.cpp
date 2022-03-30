@@ -22,7 +22,7 @@ void CounterChannel::resolveLine(DeviceInfo &deviceInfo) {
     SingleLineChannel::resolveLine(deviceInfo);
     if (!(deviceInfo.isHighSpeedCounter(getLine()))) {
         throw SimpleException(M_IODEVICE_MESSAGE_DOMAIN,
-                              boost::format("%s is not a high-speed counter input line") % lineName);
+                              boost::format("%s is not a high-speed counter input line") % getLineName());
     }
 }
 

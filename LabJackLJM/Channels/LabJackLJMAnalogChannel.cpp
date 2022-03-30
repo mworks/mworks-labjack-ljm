@@ -21,7 +21,8 @@ void AnalogInputChannel::describeComponent(ComponentInfo &info) {
 void AnalogInputChannel::resolveLine(DeviceInfo &deviceInfo) {
     AnalogChannel::resolveLine(deviceInfo);
     if (!(deviceInfo.isAIN(getLine()))) {
-        throw SimpleException(M_IODEVICE_MESSAGE_DOMAIN, boost::format("%s is not an analog input line") % lineName);
+        throw SimpleException(M_IODEVICE_MESSAGE_DOMAIN,
+                              boost::format("%s is not an analog input line") % getLineName());
     }
 }
 
@@ -35,7 +36,8 @@ void AnalogOutputChannel::describeComponent(ComponentInfo &info) {
 void AnalogOutputChannel::resolveLine(DeviceInfo &deviceInfo) {
     AnalogChannel::resolveLine(deviceInfo);
     if (!(deviceInfo.isDAC(getLine()))) {
-        throw SimpleException(M_IODEVICE_MESSAGE_DOMAIN, boost::format("%s is not an analog output line") % lineName);
+        throw SimpleException(M_IODEVICE_MESSAGE_DOMAIN,
+                              boost::format("%s is not an analog output line") % getLineName());
     }
 }
 

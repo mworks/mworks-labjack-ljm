@@ -35,7 +35,7 @@ public:
     void setValue(double value, MWTime time) const {
         // Analog signals are expected to be continuous, so update the variable
         // even if the value hasn't changed
-        valueVar->setValue(Datum(value), time);
+        getValueVar()->setValue(Datum(value), time);
     }
     
 };
@@ -51,11 +51,11 @@ public:
     void resolveLine(DeviceInfo &deviceInfo) override;
     
     void addNewValueNotification(const boost::shared_ptr<VariableNotification> &notification) const {
-        valueVar->addNotification(notification);
+        getValueVar()->addNotification(notification);
     }
     
     double getValue() const {
-        return valueVar->getValue().getFloat();
+        return getValueVar()->getValue().getFloat();
     }
     
 };

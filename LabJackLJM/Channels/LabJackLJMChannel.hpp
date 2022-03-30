@@ -25,6 +25,9 @@ public:
     explicit Channel(const ParameterValueMap &parameters);
     
 protected:
+    const VariablePtr & getValueVar() const { return valueVar; }
+    
+private:
     const VariablePtr valueVar;
     
 };
@@ -41,13 +44,14 @@ public:
     
     virtual void resolveLine(DeviceInfo &deviceInfo);
     
-    int getLine() const { return line; }
     const std::string & getCanonicalLineName() const { return canonicalLineName; }
     
 protected:
-    const std::string lineName;
+    const std::string & getLineName() const { return lineName; }
+    int getLine() const { return line; }
     
 private:
+    const std::string lineName;
     int line;
     std::string canonicalLineName;
     
@@ -65,12 +69,12 @@ public:
     
     virtual void resolveLines(DeviceInfo &deviceInfo);
     
+protected:
+    const std::string & getFirstLineName() const { return firstLineName; }
     int getFirstLine() const { return firstLine; }
     
-protected:
-    const std::string firstLineName;
-    
 private:
+    const std::string firstLineName;
     int firstLine;
     
 };

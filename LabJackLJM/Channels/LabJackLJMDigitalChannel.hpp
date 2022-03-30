@@ -38,8 +38,8 @@ public:
     using DigitalChannel::DigitalChannel;
     
     void setValue(bool value, MWTime time) const {
-        if (valueVar->getValue().getBool() != value) {
-            valueVar->setValue(Datum(value), time);
+        if (getValueVar()->getValue().getBool() != value) {
+            getValueVar()->setValue(Datum(value), time);
         }
     }
     
@@ -54,11 +54,11 @@ public:
     using DigitalChannel::DigitalChannel;
     
     void addNewValueNotification(const boost::shared_ptr<VariableNotification> &notification) const {
-        valueVar->addNotification(notification);
+        getValueVar()->addNotification(notification);
     }
     
     bool getValue() const {
-        return valueVar->getValue().getBool();
+        return getValueVar()->getValue().getBool();
     }
     
 };

@@ -28,7 +28,7 @@ void QuadratureInputChannel::resolveLines(DeviceInfo &deviceInfo) {
     
     if (!deviceInfo.isQuadraturePhaseA(getFirstLine())) {
         throw SimpleException(M_IODEVICE_MESSAGE_DOMAIN,
-                              boost::format("%s is not a quadrature input A line") % firstLineName);
+                              boost::format("%s is not a quadrature input A line") % getFirstLineName());
     }
     
     int secondLine = getFirstLine() + 1;  // Quadrature inputs are always adjacent pairs
@@ -36,7 +36,7 @@ void QuadratureInputChannel::resolveLines(DeviceInfo &deviceInfo) {
         throw SimpleException(M_IODEVICE_MESSAGE_DOMAIN,
                               boost::format("Quadrature input requires two consecutive lines, "
                                             "but the line after %s is already in use")
-                              % firstLineName);
+                              % getFirstLineName());
     }
     
     canonicalFirstLineName = deviceInfo.getCanonicalLineName(getFirstLine());
