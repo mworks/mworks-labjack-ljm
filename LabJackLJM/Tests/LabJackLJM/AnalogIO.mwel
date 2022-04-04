@@ -1,0 +1,101 @@
+%define field_size = 20
+%define pointer_size = 1
+
+%define output_min = 0.0
+%define output_max = 4.75
+%define output_mean = (output_max + output_min) / 2
+%define output_range = output_max - output_min
+
+%define tolerance = 0.005
+
+
+var output1 = 0.0 
+var output2 = 0.0
+
+var input1 = 0.0
+var input2 = 0.0
+
+
+labjack_ljm labjack (update_interval = 5ms) {
+    labjack_ljm_analog_output (
+        line = DAC0
+        value = output1
+        )
+    labjack_ljm_analog_output (
+        line = DAC1
+        value = output2
+        )
+    labjack_ljm_analog_input (
+        line = AIN2
+        value = input1
+        )
+    labjack_ljm_analog_input (
+        line = AIN3
+        value = input2
+        )
+}
+
+
+stimulus_display (redraw_on_every_refresh = true)
+
+
+rectangle bg (
+    color = 0,0,0
+    x_size = field_size + pointer_size
+    )
+
+circle pointer (
+    x_size = pointer_size
+    x_position = field_size * (input1 - output_mean) / output_range
+    y_position = field_size * (input2 - output_mean) / output_range
+    )
+
+
+%define wait_and_assert ()
+    wait (1s)
+    assert (abs(input1 - output1) < tolerance)
+    assert (abs(input2 - output2) < tolerance)
+%end
+
+%define new_output (current_output) {
+    true: rand(1.25 * output_mean, output_max),
+    false: rand(output_min, 0.75 * output_mean)
+    }[current_output <= output_mean]
+
+
+protocol {
+    output1 = output_mean
+    output2 = output_mean
+
+    input1 = output1
+    input2 = output2
+
+    queue_stimulus (bg)
+    live_queue_stimulus (pointer)
+    update_display ()
+
+    start_device_io (labjack)
+    wait_and_assert ()
+
+    list (nsamples = 5) {
+        wait (1s)
+        output1 = new_output(output1)
+        report ('output1 = $output1')
+        wait_and_assert ()
+        report ('input1 = $input1')
+
+        wait (1s)
+        output2 = new_output(output2)
+        report ('output2 = $output2')
+        wait_and_assert ()
+        report ('input2 = $input2')
+    }
+
+    wait (1s)
+    dequeue_stimulus (pointer)
+    dequeue_stimulus (bg)
+    update_display ()
+    wait (1s)
+
+    stop_device_io (labjack)
+}

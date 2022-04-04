@@ -1,0 +1,73 @@
+var source = 0 {
+    report ('source = $source')
+}
+
+var value = 0 {
+    report ('value = $value')
+}
+
+
+labjack_ljm labjack (update_interval = 3ms) {
+    labjack_ljm_word_output (
+        first_line = fio4
+        num_lines = 2
+        value = source
+        )
+    labjack_ljm_quadrature_input (
+        first_line = fio6
+        value = value
+        )
+}
+
+
+%define wait_and_assert (expected_value)
+    wait (1s)
+    assert (value == expected_value)
+%end
+
+
+protocol {
+    block (nsamples = 2) {
+        //
+        // We use the test sequence described by LabJack:
+        // https://labjack.com/support/datasheets/t-series/digital-io/extended-features/quadrature
+        //
+
+        source = 3
+        value = -100
+
+        report ('Starting device')
+        start_io_device (labjack)
+
+        wait_and_assert (0)
+        source = 1
+        wait_and_assert (1)
+        source = 0
+        wait_and_assert (0)
+        source = 2
+        wait_and_assert (-1)
+        source = 3
+        wait_and_assert (-2)
+        source = 2
+        wait_and_assert (-1)
+        source = 0
+        wait_and_assert (0)
+        source = 1
+        wait_and_assert (1)
+        source = 3
+        wait_and_assert (2)
+        source = 2
+        wait_and_assert (3)
+        source = 0
+        wait_and_assert (4)
+        source = 1
+        wait_and_assert (5)
+        source = 3
+        wait_and_assert (6)
+        source = 2
+        wait_and_assert (7)
+
+        report ('Stopping device')
+        stop_io_device (labjack)
+    }
+}
