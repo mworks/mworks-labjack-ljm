@@ -1,0 +1,116 @@
+---
+
+
+name: LabJack LJM Device
+signature: iodevice/labjack_ljm
+isa: IODevice
+platform: macos
+allowed_child: LabJack LJM Channel
+description: >
+    Interface to a LabJack LJM device
+parameters: 
+  - 
+    name: device_type
+    default: ANY
+    description: >
+        Desired device type
+  - 
+    name: connection_type
+    default: ANY
+    description: >
+        Desired connection type
+  - 
+    name: identifier
+    default: ANY
+    description: >
+        Desired device identifier
+  - 
+    name: update_interval
+    required: yes
+    example: 3ms
+    description: >
+        MWorks will poll the device for new input data every ``update_interval``
+        microseconds
+
+
+---
+
+
+name: LabJack LJM Channel
+abstract: yes
+isa: IOChannel
+platform: macos
+
+
+---
+
+
+name: LabJack LJM Analog Input Channel
+signature: iochannel/labjack_ljm_analog_input
+isa: LabJack LJM Channel
+description: Analog input channel on a `LabJack LJM Device`
+
+
+---
+
+
+name: LabJack LJM Analog Output Channel
+signature: iochannel/labjack_ljm_analog_output
+isa: LabJack LJM Channel
+description: Analog output channel on a `LabJack LJM Device`
+
+
+---
+
+
+name: LabJack LJM Digital Input Channel
+signature: iochannel/labjack_ljm_digital_input
+isa: LabJack LJM Channel
+description: Digital input channel on a `LabJack LJM Device`
+
+
+---
+
+
+name: LabJack LJM Digital Output Channel
+signature: iochannel/labjack_ljm_digital_output
+isa: LabJack LJM Channel
+description: Digital output channel on a `LabJack LJM Device`
+
+
+---
+
+
+name: LabJack LJM Word Input Channel
+signature: iochannel/labjack_ljm_word_input
+isa: LabJack LJM Channel
+description: Word input channel on a `LabJack LJM Device`
+
+
+---
+
+
+name: LabJack LJM Word Output Channel
+signature: iochannel/labjack_ljm_word_output
+isa: LabJack LJM Channel
+description: Word output channel on a `LabJack LJM Device`
+
+
+---
+
+
+name: LabJack LJM Counter Channel
+signature: iochannel/labjack_ljm_counter
+isa: LabJack LJM Channel
+description: Counter channel on a `LabJack LJM Device`
+
+
+---
+
+
+name: LabJack LJM Quadrature Input Channel
+signature: iochannel/labjack_ljm_quadrature_input
+isa: LabJack LJM Channel
+description: Quadrature input channel on a `LabJack LJM Device`
+
+

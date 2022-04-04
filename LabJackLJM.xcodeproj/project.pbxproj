@@ -36,6 +36,7 @@
 		E11E886027ED0385002EF5CC /* LabJackLJMCounterChannel.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E11E885E27ED0385002EF5CC /* LabJackLJMCounterChannel.cpp */; };
 		E11E886327F20514002EF5CC /* LabJackLJMQuadratureChannel.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E11E886127F20514002EF5CC /* LabJackLJMQuadratureChannel.cpp */; };
 		E13416B0239AB93E000985A9 /* LabJackLJMDigitalChannel.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E13416AE239AB93E000985A9 /* LabJackLJMDigitalChannel.cpp */; };
+		E17F1ECA27FB456D00F4778F /* MWComponents.yaml in Resources */ = {isa = PBXBuildFile; fileRef = E17F1EC927FB456D00F4778F /* MWComponents.yaml */; };
 		E183D44223887216008CB164 /* LabJackLJMChannel.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E183D44023887216008CB164 /* LabJackLJMChannel.cpp */; };
 		E186882C238D7E8200B1C658 /* LabJackLJMUtilities.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E186882A238D7E8200B1C658 /* LabJackLJMUtilities.cpp */; };
 		E1903919243FB279004AF096 /* LabJackLJMDeviceInfo.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E1903917243FB279004AF096 /* LabJackLJMDeviceInfo.cpp */; };
@@ -84,6 +85,7 @@
 		E11E886227F20514002EF5CC /* LabJackLJMQuadratureChannel.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = LabJackLJMQuadratureChannel.hpp; sourceTree = "<group>"; };
 		E13416AE239AB93E000985A9 /* LabJackLJMDigitalChannel.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = LabJackLJMDigitalChannel.cpp; sourceTree = "<group>"; };
 		E13416AF239AB93E000985A9 /* LabJackLJMDigitalChannel.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = LabJackLJMDigitalChannel.hpp; sourceTree = "<group>"; };
+		E17F1EC927FB456D00F4778F /* MWComponents.yaml */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.yaml; path = MWComponents.yaml; sourceTree = "<group>"; };
 		E183D44023887216008CB164 /* LabJackLJMChannel.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = LabJackLJMChannel.cpp; sourceTree = "<group>"; };
 		E183D44123887216008CB164 /* LabJackLJMChannel.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = LabJackLJMChannel.hpp; sourceTree = "<group>"; };
 		E186882A238D7E8200B1C658 /* LabJackLJMUtilities.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = LabJackLJMUtilities.cpp; sourceTree = "<group>"; };
@@ -183,6 +185,7 @@
 			children = (
 				E1E7C6F62385C42F00F37E3E /* Info.plist */,
 				E1E7C70C2385C86800F37E3E /* LabJackLJM-Prefix.pch */,
+				E17F1EC927FB456D00F4778F /* MWComponents.yaml */,
 			);
 			name = "Supporting Files";
 			sourceTree = "<group>";
@@ -262,6 +265,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				E17F1ECA27FB456D00F4778F /* MWComponents.yaml in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
