@@ -48,8 +48,8 @@ Device::Device(const ParameterValueMap &parameters) :
 
 Device::~Device() {
     if (-1 != handle) {
-        logError(LJM_eWriteName(handle, "LED_COMM", 0), "Cannot turn off LJM device COMM LED");
-        logError(LJM_Close(handle), "Cannot close LJM device");
+        logError(LJM_eWriteName(handle, "LED_COMM", 0), "Cannot turn off LabJack LJM device COMM LED");
+        logError(LJM_Close(handle), "Cannot close LabJack LJM device");
     }
 }
 
@@ -82,20 +82,20 @@ void Device::addChild(std::map<std::string, std::string> parameters,
 
 bool Device::initialize() {
     if (logError(LJM_OpenS(deviceType.c_str(), connectionType.c_str(), identifier.c_str(), &handle),
-                 "Cannot open LJM device"))
+                 "Cannot open LabJack LJM device"))
     {
         return false;
     }
     
     int actualDeviceType;
     if (logError(LJM_GetHandleInfo(handle, &actualDeviceType, nullptr, nullptr, nullptr, nullptr, nullptr),
-                 "Cannot determine type of opened LJM device"))
+                 "Cannot determine type of opened LabJack LJM device"))
     {
         return false;
     }
     deviceInfo = DeviceInfo::getDeviceInfo(actualDeviceType);
     if (!deviceInfo) {
-        merror(M_IODEVICE_MESSAGE_DOMAIN, "Selected LJM device is not supported (type = %d)", actualDeviceType);
+        merror(M_IODEVICE_MESSAGE_DOMAIN, "Selected LabJack LJM device is not supported (type = %d)", actualDeviceType);
         return false;
     }
     
@@ -125,7 +125,7 @@ bool Device::initialize() {
         prepareQuadratureInputs(configBuffer);
     }
     
-    if (logError(configBuffer.write(handle), "Cannot configure LJM device")) {
+    if (logError(configBuffer.write(handle), "Cannot configure LabJack LJM device")) {
         return false;
     }
     
@@ -152,7 +152,7 @@ bool Device::startDeviceIO() {
             updateQuadratureInputs(configBuffer, true);
         }
         
-        if (logError(configBuffer.write(handle), "Cannot start LJM device")) {
+        if (logError(configBuffer.write(handle), "Cannot start LabJack LJM device")) {
             return false;
         }
         
@@ -190,7 +190,7 @@ bool Device::stopDeviceIO() {
             updateAnalogOutputs(configBuffer);
         }
         
-        if (logError(configBuffer.write(handle), "Cannot stop LJM device")) {
+        if (logError(configBuffer.write(handle), "Cannot stop LabJack LJM device")) {
             return false;
         }
         
@@ -224,7 +224,9 @@ int Device::WriteBuffer::write(int handle) {
                                       values.data(),
                                       &errorAddress);
     if (LJME_NOERROR != result) {
-        merror(M_IODEVICE_MESSAGE_DOMAIN, "Error writing to LJM register \"%s\"", names.at(errorAddress).c_str());
+        merror(M_IODEVICE_MESSAGE_DOMAIN,
+               "Error writing to LabJack LJM register \"%s\"",
+               names.at(errorAddress).c_str());
     }
     
     return result;
@@ -252,7 +254,9 @@ int Device::ReadBuffer::read(int handle) {
                                      values.data(),
                                      &errorAddress);
     if (LJME_NOERROR != result) {
-        merror(M_IODEVICE_MESSAGE_DOMAIN, "Error reading from LJM register \"%s\"", names.at(errorAddress).c_str());
+        merror(M_IODEVICE_MESSAGE_DOMAIN,
+               "Error reading from LabJack LJM register \"%s\"",
+               names.at(errorAddress).c_str());
     }
     
     return result;
@@ -262,7 +266,7 @@ int Device::ReadBuffer::read(int handle) {
 int Device::convertNameToAddress(const std::string &name, int &type) {
     int address;
     throwError(LJM_NameToAddress(name.c_str(), &address, &type),
-               "Internal error: Cannot convert LJM register name to address");
+               "Internal error: Cannot convert LabJack LJM register name to address");
     return address;
 }
 
@@ -287,7 +291,7 @@ void Device::prepareAnalogOutputs(WriteBuffer &configBuffer) {
                 lock_guard lock(sharedThis->mutex);
                 if (sharedThis->running) {
                     logError(LJM_eWriteAddress(sharedThis->handle, address, type, data.getFloat()),
-                             "Cannot set analog output line on LJM device");
+                             "Cannot set analog output line on LabJack LJM device");
                 }
             }
         };
@@ -337,7 +341,7 @@ void Device::prepareDigitalOutputs(WriteBuffer &configBuffer) {
                 lock_guard lock(sharedThis->mutex);
                 if (sharedThis->running) {
                     logError(LJM_eWriteAddress(sharedThis->handle, address, type, data.getBool()),
-                             "Cannot set digital output line on LJM device");
+                             "Cannot set digital output line on LabJack LJM device");
                 }
             }
         };
@@ -362,7 +366,8 @@ void Device::prepareDigitalOutputs(WriteBuffer &configBuffer) {
                 lock_guard lock(sharedThis->mutex);
                 if (sharedThis->running) {
                     updateBuffer.setValue(1, dioBitMask & (std::uint32_t(data.getInteger()) << firstLineDIOIndex));
-                    logError(updateBuffer.write(sharedThis->handle), "Cannot set word output lines on LJM device");
+                    logError(updateBuffer.write(sharedThis->handle),
+                             "Cannot set word output lines on LabJack LJM device");
                 }
             }
         };
@@ -478,7 +483,7 @@ void Device::readInputs() {
         return;
     }
     
-    if (logError(inputBuffer.read(handle), "Cannot read inputs from LJM device")) {
+    if (logError(inputBuffer.read(handle), "Cannot read inputs from LabJack LJM device")) {
         return;
     }
     
