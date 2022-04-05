@@ -1,0 +1,13 @@
+%include 'Counter.inc'
+
+
+labjack_ljm labjack (update_interval = 3ms) {
+    labjack_ljm_digital_output (
+        line = FIO5
+        value = signal
+        )
+    labjack_ljm_counter (
+        line = FIO7
+        value = count
+        )
+}
