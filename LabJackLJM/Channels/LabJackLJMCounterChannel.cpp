@@ -18,11 +18,19 @@ void CounterChannel::describeComponent(ComponentInfo &info) {
 }
 
 
+CounterChannel::CounterChannel(const ParameterValueMap &parameters) :
+    SingleLineChannel(parameters),
+    highSpeed(false)
+{ }
+
+
 void CounterChannel::resolveLine(DeviceInfo &deviceInfo) {
     SingleLineChannel::resolveLine(deviceInfo);
-    if (!(deviceInfo.isHighSpeedCounter(getLine()))) {
+    if (deviceInfo.isHighSpeedCounter(getLine())) {
+        highSpeed = true;
+    } else if (!(deviceInfo.isInterruptCounter(getLine()))) {
         throw SimpleException(M_IODEVICE_MESSAGE_DOMAIN,
-                              boost::format("%s is not a high-speed counter input line") % getLineName());
+                              boost::format("%s is not a counter input line") % getLineName());
     }
 }
 

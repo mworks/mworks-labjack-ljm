@@ -134,6 +134,11 @@ class T7DeviceInfo : public DeviceInfo {
         return isInRange<PhysicalLine::CIO0, PhysicalLine::CIO3>(line);
     }
     
+    bool isInterruptCounter(int line) const override {
+        return (isInRange<PhysicalLine::DIO0, PhysicalLine::DIO3>(line) ||
+                isInRange<PhysicalLine::DIO6, PhysicalLine::DIO7>(line));
+    }
+    
     bool isQuadraturePhaseA(int line) const override {
         return (line == static_cast<int>(PhysicalLine::DIO0) ||
                 line == static_cast<int>(PhysicalLine::DIO2) ||
@@ -238,6 +243,10 @@ class T4DeviceInfo : public DeviceInfo {
     
     bool isHighSpeedCounter(int line) const override {
         return isInRange<PhysicalLine::CIO0, PhysicalLine::CIO3>(line);
+    }
+    
+    bool isInterruptCounter(int line) const override {
+        return isInRange<PhysicalLine::DIO4, PhysicalLine::DIO9>(line);
     }
     
     bool isQuadraturePhaseA(int line) const override {

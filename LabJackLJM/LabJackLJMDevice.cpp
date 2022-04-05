@@ -408,7 +408,7 @@ void Device::prepareCounters(WriteBuffer &configBuffer) {
         auto &line = channel->getCanonicalLineName();
         
         configBuffer.append(line + "_EF_ENABLE", 0);
-        configBuffer.append(line + "_EF_INDEX", 7);
+        configBuffer.append(line + "_EF_INDEX", (channel->isHighSpeed() ? 7 : 8));
         
         inputBuffer.append(line + "_EF_READ_A");
     }

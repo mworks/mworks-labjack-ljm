@@ -20,15 +20,20 @@ class CounterChannel : public SingleLineChannel {
 public:
     static void describeComponent(ComponentInfo &info);
     
-    using SingleLineChannel::SingleLineChannel;
+    explicit CounterChannel(const ParameterValueMap &parameters);
     
     void resolveLine(DeviceInfo &deviceInfo) override;
+    
+    bool isHighSpeed() const { return highSpeed; }
     
     void setValue(long long value, MWTime time) const {
         if (getValueVar()->getValue().getInteger() != value) {
             getValueVar()->setValue(Datum(value), time);
         }
     }
+    
+private:
+    bool highSpeed;
     
 };
 

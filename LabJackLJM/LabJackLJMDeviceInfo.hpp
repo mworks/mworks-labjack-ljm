@@ -36,6 +36,7 @@ public:
     virtual int getDIOIndex(int line) const = 0;
     
     virtual bool isHighSpeedCounter(int line) const = 0;
+    virtual bool isInterruptCounter(int line) const = 0;
     virtual bool isQuadraturePhaseA(int line) const = 0;
     
 private:
