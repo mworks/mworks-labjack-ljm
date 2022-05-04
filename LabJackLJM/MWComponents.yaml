@@ -6,31 +6,38 @@ signature: iodevice/labjack_ljm
 isa: IODevice
 platform: macos
 allowed_child: LabJack LJM Channel
-description: >
-    Interface to a LabJack LJM device
+description: |
+    Interface to devices compatible with the `LabJack LJM library
+    <https://labjack.com/ljm>`_.  Currently, the LabJack `T4
+    <https://labjack.com/products/t4>`_ and `T7
+    <https://labjack.com/products/t7>`_ are supported.
+
+    For information on acceptable values for the parameters `device_type`_,
+    `connection_type`_, and `identifier`_, see the documentation for the
+    `LJM_OpenS function
+    <https://labjack.com/support/software/api/ljm/function-reference/ljmopens>`_.
 parameters: 
   - 
     name: device_type
+    example: [T4, T7]
     default: ANY
-    description: >
-        Desired device type
+    description: Desired device type
   - 
     name: connection_type
+    example: [USB, ETHERNET, WIFI]
     default: ANY
-    description: >
-        Desired connection type
+    description: Desired connection type
   - 
     name: identifier
+    example: ['470010103', '192.168.1.207', 'My T7 Device']
     default: ANY
-    description: >
-        Desired device identifier
+    description: Desired device identifier
   - 
     name: update_interval
     required: yes
     example: 3ms
     description: >
-        MWorks will poll the device for new input data every ``update_interval``
-        microseconds
+        Interval at which MWorks will poll the device for new input data
 
 
 ---
@@ -49,6 +56,16 @@ name: LabJack LJM Analog Input Channel
 signature: iochannel/labjack_ljm_analog_input
 isa: LabJack LJM Channel
 description: Analog input channel on a `LabJack LJM Device`
+parameters: 
+  - 
+    name: line
+    required: yes
+    example: [AIN0, ain3]
+    description: Analog input line name
+  - 
+    name: value
+    required: yes
+    description: Variable in which to store input voltage values
 
 
 ---
@@ -58,6 +75,19 @@ name: LabJack LJM Analog Output Channel
 signature: iochannel/labjack_ljm_analog_output
 isa: LabJack LJM Channel
 description: Analog output channel on a `LabJack LJM Device`
+parameters: 
+  - 
+    name: line
+    required: yes
+    example: [DAC0, dac1]
+    description: Analog output line name
+  - 
+    name: value
+    required: yes
+    description: >
+        Variable from which to read output voltage values.  `Assigning <Assign
+        Variable>` a value to the variable causes the output voltage to be
+        changed immediately.
 
 
 ---
@@ -67,6 +97,16 @@ name: LabJack LJM Digital Input Channel
 signature: iochannel/labjack_ljm_digital_input
 isa: LabJack LJM Channel
 description: Digital input channel on a `LabJack LJM Device`
+parameters: 
+  - 
+    name: line
+    required: yes
+    example: [FIO4, eio7, DIO16]
+    description: Digital line name
+  - 
+    name: value
+    required: yes
+    description: Variable in which to store input state (true or false)
 
 
 ---
@@ -76,6 +116,19 @@ name: LabJack LJM Digital Output Channel
 signature: iochannel/labjack_ljm_digital_output
 isa: LabJack LJM Channel
 description: Digital output channel on a `LabJack LJM Device`
+parameters: 
+  - 
+    name: line
+    required: yes
+    example: [FIO4, eio7, DIO16]
+    description: Digital line name
+  - 
+    name: value
+    required: yes
+    description: >
+        Variable from which to read output state (true or false).  `Assigning
+        <Assign Variable>` a value to the variable causes the output state to be
+        changed immediately.
 
 
 ---
@@ -85,6 +138,30 @@ name: LabJack LJM Word Input Channel
 signature: iochannel/labjack_ljm_word_input
 isa: LabJack LJM Channel
 description: Word input channel on a `LabJack LJM Device`
+parameters: 
+  - 
+    name: first_line
+    required: yes
+    example: [FIO4, eio7, DIO16]
+    description: |
+        Name of the digital line from which to read the first (least significant)
+        bit of words stored in `value`_.  Subsequent bits are read from the
+        lines following the first, up to the total number of lines specified by
+        `num_lines`_.
+
+        For example, if the first line is FIO6, and the number of lines is 4,
+        then lines FIO6, FIO7, EIO0, and EIO1 will provide bits 0, 1, 2, and 3,
+        respectively, of the input word, where bit 0 is least significant and
+        bit 3 is most significant.
+  - 
+    name: num_lines
+    required: yes
+    example: [4, 8]
+    description: Number of digital lines comprising the input word
+  - 
+    name: value
+    required: yes
+    description: Variable in which to store input word (an integer)
 
 
 ---
@@ -94,6 +171,33 @@ name: LabJack LJM Word Output Channel
 signature: iochannel/labjack_ljm_word_output
 isa: LabJack LJM Channel
 description: Word output channel on a `LabJack LJM Device`
+parameters: 
+  - 
+    name: first_line
+    required: yes
+    example: [FIO4, eio7, DIO16]
+    description: |
+        Name of the digital line on which to output the first (least significant)
+        bit of words assigned to `value`_.  Subsequent bits are output on the
+        lines following the first, up to the total number of lines specified by
+        `num_lines`_.
+
+        For example, if the first line is FIO6, and the number of lines is 4,
+        then lines FIO6, FIO7, EIO0, and EIO1 will carry bits 0, 1, 2, and 3,
+        respectively, of the output word, where bit 0 is least significant and
+        bit 3 is most significant.
+  - 
+    name: num_lines
+    required: yes
+    example: [4, 8]
+    description: Number of digital lines comprising the output word
+  - 
+    name: value
+    required: yes
+    description: >
+        Variable from which to read output word (an integer).  `Assigning
+        <Assign Variable>` a value to the variable causes the state of the
+        lines used to output the word to be changed immediately.
 
 
 ---
@@ -102,7 +206,25 @@ description: Word output channel on a `LabJack LJM Device`
 name: LabJack LJM Counter Channel
 signature: iochannel/labjack_ljm_counter
 isa: LabJack LJM Channel
-description: Counter channel on a `LabJack LJM Device`
+description: |
+    Counter channel on a `LabJack LJM Device`.
+
+    Counts the rising edge of pulses on the selected digital line.  Supports
+    both `high-speed
+    <https://labjack.com/support/datasheets/t-series/digital-io/extended-features/high-speed-counter>`_
+    and `interrupt
+    <https://labjack.com/support/datasheets/t-series/digital-io/extended-features/interrupt-counter>`_
+    counters.
+parameters: 
+  - 
+    name: line
+    required: yes
+    example: [CIO1, fio6]
+    description: Digital line name
+  - 
+    name: value
+    required: yes
+    description: Variable in which to store edge counts
 
 
 ---
@@ -112,5 +234,23 @@ name: LabJack LJM Quadrature Input Channel
 signature: iochannel/labjack_ljm_quadrature_input
 isa: LabJack LJM Channel
 description: Quadrature input channel on a `LabJack LJM Device`
+parameters: 
+  - 
+    name: first_line
+    required: yes
+    example: [FIO2, eio0]
+    description: |
+        Name of the digital line to use as the phase A input.  The next digital
+        line will be used for phase B.  For example, if FIO6 is phase A, FIO7
+        will be phase B.
+
+        Note that only specific pairs of digital lines can be used for
+        quadrature input.  For more information, see the `LabJack T-series
+        datasheet
+        <https://labjack.com/support/datasheets/t-series/digital-io/extended-features/quadrature>`_.
+  - 
+    name: value
+    required: yes
+    description: Variable in which to store quadrature count
 
 
