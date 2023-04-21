@@ -310,7 +310,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/zsh;
-			shellScript = "liblabjackm_path=/usr/local/lib/libLabJackM.dylib\n\n/usr/bin/xcrun install_name_tool \\\n  -change \\\n  \"$(/usr/bin/xcrun otool -DX $liblabjackm_path)\" \\\n  \"$liblabjackm_path\" \\\n  \"${BUILT_PRODUCTS_DIR}/${EXECUTABLE_PATH}\"\n";
+			shellScript = "liblabjackm_path=\"/usr/local/lib/libLabJackM.dylib\"\nliblabjackm_install_name=\"$(/usr/bin/xcrun otool -DX \"$liblabjackm_path\")\"\nexecutable_path=\"${BUILT_PRODUCTS_DIR}/${EXECUTABLE_PATH}\"\n\nif /usr/bin/xcrun otool -L \"$executable_path\" | /usr/bin/grep -q \"$liblabjackm_install_name\"\nthen\n    /usr/bin/xcrun install_name_tool -change \\\n        \"$liblabjackm_install_name\" \\\n        \"$liblabjackm_path\" \\\n        \"$executable_path\"\nfi\n";
 			showEnvVarsInLog = 0;
 		};
 /* End PBXShellScriptBuildPhase section */
