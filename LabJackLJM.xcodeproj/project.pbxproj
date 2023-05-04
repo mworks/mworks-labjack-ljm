@@ -44,7 +44,6 @@
 		E1903919243FB279004AF096 /* LabJackLJMDeviceInfo.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E1903917243FB279004AF096 /* LabJackLJMDeviceInfo.cpp */; };
 		E1E7C6FD2385C5AE00F37E3E /* LabJackLJMPlugin.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E1E7C6FC2385C5AE00F37E3E /* LabJackLJMPlugin.cpp */; };
 		E1E7C70F2385C94500F37E3E /* MWorksCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E1E7C70E2385C94500F37E3E /* MWorksCore.framework */; };
-		E1E7C7112385C99500F37E3E /* libLabJackM.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = E1E7C7102385C99500F37E3E /* libLabJackM.dylib */; };
 		E1E7C7132385CA8E00F37E3E /* LabJackLJM.bundle in CopyFiles */ = {isa = PBXBuildFile; fileRef = E1E7C6F32385C42F00F37E3E /* LabJackLJM.bundle */; };
 		E1E7C7172385CEE300F37E3E /* LabJackLJMDevice.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E1E7C7152385CEE300F37E3E /* LabJackLJMDevice.cpp */; };
 		E1EB3B4C27E373EC008EDABF /* LabJackLJMAnalogChannel.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E1EB3B4A27E373EC008EDABF /* LabJackLJMAnalogChannel.cpp */; };
@@ -112,7 +111,6 @@
 		E1E7C70A2385C67000F37E3E /* macOS_Plugin.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = macOS_Plugin.xcconfig; sourceTree = "<group>"; };
 		E1E7C70C2385C86800F37E3E /* LabJackLJM-Prefix.pch */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "LabJackLJM-Prefix.pch"; sourceTree = "<group>"; };
 		E1E7C70E2385C94500F37E3E /* MWorksCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = MWorksCore.framework; path = /Library/Frameworks/MWorksCore.framework; sourceTree = "<absolute>"; };
-		E1E7C7102385C99500F37E3E /* libLabJackM.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libLabJackM.dylib; path = /usr/local/lib/libLabJackM.dylib; sourceTree = "<absolute>"; };
 		E1E7C7152385CEE300F37E3E /* LabJackLJMDevice.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = LabJackLJMDevice.cpp; sourceTree = "<group>"; };
 		E1E7C7162385CEE300F37E3E /* LabJackLJMDevice.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = LabJackLJMDevice.hpp; sourceTree = "<group>"; };
 		E1EB3B4A27E373EC008EDABF /* LabJackLJMAnalogChannel.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = LabJackLJMAnalogChannel.cpp; sourceTree = "<group>"; };
@@ -125,7 +123,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				E1E7C70F2385C94500F37E3E /* MWorksCore.framework in Frameworks */,
-				E1E7C7112385C99500F37E3E /* libLabJackM.dylib in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -216,7 +213,6 @@
 			isa = PBXGroup;
 			children = (
 				E1E7C70E2385C94500F37E3E /* MWorksCore.framework */,
-				E1E7C7102385C99500F37E3E /* libLabJackM.dylib */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -310,7 +306,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/zsh;
-			shellScript = "liblabjackm_path=\"/usr/local/lib/libLabJackM.dylib\"\nliblabjackm_install_name=\"$(/usr/bin/xcrun otool -DX \"$liblabjackm_path\")\"\nexecutable_path=\"${BUILT_PRODUCTS_DIR}/${EXECUTABLE_PATH}\"\n\nif /usr/bin/xcrun otool -L \"$executable_path\" | /usr/bin/grep -q \"$liblabjackm_install_name\"\nthen\n    /usr/bin/xcrun install_name_tool -change \\\n        \"$liblabjackm_install_name\" \\\n        \"$liblabjackm_path\" \\\n        \"$executable_path\"\nfi\n";
+			shellScript = "executable_path=\"${BUILT_PRODUCTS_DIR}/${EXECUTABLE_PATH}\"\nliblabjackm_new_install_name=\"/usr/local/lib/libLabJackM.dylib\"\n\nfor arch in $(echo $ARCHS); do\n    otool=( /usr/bin/xcrun otool -arch $arch )\n    liblabjackm_path=\"${USER_LIBRARY_DIR}/Application Support/MWorks/Developer/lib/${arch}/libLabJackM.dylib\"\n    liblabjackm_old_install_name=\"$($otool -DX \"$liblabjackm_path\")\"\n\n    if $otool -L \"$executable_path\" | /usr/bin/grep -q \"$liblabjackm_old_install_name\"\n    then\n        /usr/bin/xcrun install_name_tool -change \\\n            \"$liblabjackm_old_install_name\" \\\n            \"$liblabjackm_new_install_name\" \\\n            \"$executable_path\" || exit\n    fi\ndone\n\n";
 			showEnvVarsInLog = 0;
 		};
 /* End PBXShellScriptBuildPhase section */
@@ -358,21 +354,21 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = E1E7C70A2385C67000F37E3E /* macOS_Plugin.xcconfig */;
 			buildSettings = {
-				ARCHS = x86_64;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "LabJackLJM/LabJackLJM-Prefix.pch";
 				HEADER_SEARCH_PATHS = (
+					"$(USER_LIBRARY_DIR)/Application\\ Support/MWorks/Developer/include/$(CURRENT_ARCH)",
 					"$(inherited)",
-					/usr/local/include,
 				);
 				INFOPLIST_FILE = LabJackLJM/Info.plist;
 				LIBRARY_SEARCH_PATHS = (
+					"$(USER_LIBRARY_DIR)/Application\\ Support/MWorks/Developer/lib/$(CURRENT_ARCH)",
 					"$(inherited)",
-					/usr/local/lib,
 				);
 				OTHER_LDFLAGS = (
 					"$(inherited)",
 					"-headerpad_max_install_names",
+					"-lLabJackM",
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = "org.mworks-project.LabJackLJM";
 				PRODUCT_NAME = "$(TARGET_NAME)";
