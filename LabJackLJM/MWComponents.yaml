@@ -8,18 +8,19 @@ platform: macos
 allowed_child: LabJack LJM Channel
 description: |
     Interface to devices compatible with the `LabJack LJM library
-    <https://labjack.com/ljm>`_.  Currently, the LabJack `T4
-    <https://labjack.com/products/t4>`_ and `T7
-    <https://labjack.com/products/t7>`_ are supported.
+    <https://labjack.com/pages/support?doc=/software-driver/ljm-users-guide/>`_.
+    Currently, the LabJack `T4 <https://labjack.com/products/labjack-t4>`_ ,
+    `T7 <https://labjack.com/products/labjack-t7>`_, and `T8
+    <https://labjack.com/products/t8>`_ are supported.
 
     For information on acceptable values for the parameters `device_type`_,
     `connection_type`_, and `identifier`_, see the documentation for the
     `LJM_OpenS function
-    <https://labjack.com/support/software/api/ljm/function-reference/ljmopens>`_.
+    <https://labjack.com/pages/support/?doc=/software-driver/ljm-users-guide/opens>`_.
 parameters: 
   - 
     name: device_type
-    example: [T4, T7]
+    example: [T4, T7, T8]
     default: ANY
     description: Desired device type
   - 
@@ -211,9 +212,9 @@ description: |
 
     Counts the rising edge of pulses on the selected digital line.  Supports
     both `high-speed
-    <https://labjack.com/support/datasheets/t-series/digital-io/extended-features/high-speed-counter>`_
+    <https://labjack.com/pages/support/?doc=/datasheets/t-series-datasheet/1328-high-speed-counter-t-series-datasheet>`_
     and `interrupt
-    <https://labjack.com/support/datasheets/t-series/digital-io/extended-features/interrupt-counter>`_
+    <https://labjack.com/pages/support/?doc=/datasheets/t-series-datasheet/1329-interrupt-counter-t-series-datasheet>`_
     counters.
 parameters: 
   - 
@@ -247,7 +248,7 @@ parameters:
         Note that only specific pairs of digital lines can be used for
         quadrature input.  For more information, see the `LabJack T-series
         datasheet
-        <https://labjack.com/support/datasheets/t-series/digital-io/extended-features/quadrature>`_.
+        <https://labjack.com/pages/support/?doc=/datasheets/t-series-datasheet/13211-quadrature-in-t-series-datasheet>`_.
   - 
     name: value
     required: yes
