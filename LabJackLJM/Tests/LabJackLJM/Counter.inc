@@ -49,7 +49,7 @@ protocol (nsamples = 2) {
                 )
             goto (
                 target = 'Signal High'
-                timer = timer_expired(timer)
+                when = timer_expired(timer)
                 )
         }
 
