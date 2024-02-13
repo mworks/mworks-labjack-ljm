@@ -25,6 +25,8 @@ public:
     static const std::string CONNECTION_TYPE;
     static const std::string IDENTIFIER;
     static const std::string UPDATE_INTERVAL;
+    static const std::string ANALOG_WAVEFORM_DATA_INTERVAL;
+    static const std::string ANALOG_WAVEFORM_TRIGGER_LINE;
     
     static void describeComponent(ComponentInfo &info);
     
@@ -39,10 +41,18 @@ public:
     bool startDeviceIO() override;
     bool stopDeviceIO() override;
     
+    void startAnalogWaveformOutput();
+    void stopAnalogWaveformOutput();
+    
 private:
     struct IOBuffer {
         void append(const std::string &name, double value = 0.0);
+        void append(const IOBuffer &other);
     protected:
+        template<typename T>
+        static void append(std::vector<T> &dst, const std::vector<T> &src) {
+            dst.insert(dst.end(), src.begin(), src.end());
+        }
         std::vector<std::string> names;
         std::vector<int> addresses;
         std::vector<int> types;
@@ -68,6 +78,10 @@ private:
     };
     
     static int convertNameToAddress(const std::string &name, int &type);
+    static int convertNameToAddress(const std::string &name) {
+        int type;
+        return convertNameToAddress(name, type);
+    }
     
     bool haveAnalogInputs() const { return !(analogInputChannels.empty()); }
     void prepareAnalogInputs(WriteBuffer &configBuffer);
@@ -75,6 +89,11 @@ private:
     bool haveAnalogOutputs() const { return !(analogOutputChannels.empty()); }
     void prepareAnalogOutputs(WriteBuffer &configBuffer);
     void updateAnalogOutputs(WriteBuffer &configBuffer, bool active = false);
+    
+    bool haveAnalogWaveforms() const { return !(analogWaveformChannels.empty()); }
+    void prepareAnalogWaveforms(WriteBuffer &configBuffer);
+    void startAnalogWaveforms();
+    void stopAnalogWaveforms();
     
     bool haveDigitalInputs() const { return !(digitalInputChannels.empty() && wordInputChannels.empty()); }
     void prepareDigitalInputs(WriteBuffer &configBuffer);
@@ -102,11 +121,14 @@ private:
     const std::string connectionType;
     const std::string identifier;
     const MWTime updateInterval;
+    const VariablePtr analogWaveformDataInterval;
+    const VariablePtr analogWaveformTriggerLine;
     
     const boost::shared_ptr<Clock> clock;
     
     std::vector<boost::shared_ptr<AnalogInputChannel>> analogInputChannels;
     std::vector<boost::shared_ptr<AnalogOutputChannel>> analogOutputChannels;
+    std::vector<boost::shared_ptr<AnalogWaveformChannel>> analogWaveformChannels;
     std::vector<boost::shared_ptr<DigitalInputChannel>> digitalInputChannels;
     std::vector<boost::shared_ptr<DigitalOutputChannel>> digitalOutputChannels;
     std::vector<boost::shared_ptr<WordInputChannel>> wordInputChannels;
@@ -119,6 +141,9 @@ private:
     
     ReadBuffer inputBuffer;
     boost::shared_ptr<ScheduleTask> readInputsTask;
+    
+    WriteBuffer analogWaveformsResetBuffer;
+    bool analogWaveformsRunning;
     
     using lock_guard = std::lock_guard<std::mutex>;
     lock_guard::mutex_type mutex;

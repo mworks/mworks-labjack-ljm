@@ -6,7 +6,7 @@
 //  Copyright © 2019 The MWorks Project. All rights reserved.
 //
 
-#include "LabJackLJMDevice.hpp"
+#include "LabJackLJMAction.hpp"
 
 
 BEGIN_NAMESPACE_MW_LABJACK_LJM
@@ -17,12 +17,15 @@ class Plugin : public mw::Plugin {
         registry->registerFactory<StandardComponentFactory, Device>();
         registry->registerFactory<StandardComponentFactory, AnalogInputChannel>();
         registry->registerFactory<StandardComponentFactory, AnalogOutputChannel>();
+        registry->registerFactory<StandardComponentFactory, AnalogWaveformChannel>();
         registry->registerFactory<StandardComponentFactory, DigitalInputChannel>();
         registry->registerFactory<StandardComponentFactory, DigitalOutputChannel>();
         registry->registerFactory<StandardComponentFactory, WordInputChannel>();
         registry->registerFactory<StandardComponentFactory, WordOutputChannel>();
         registry->registerFactory<StandardComponentFactory, CounterChannel>();
         registry->registerFactory<StandardComponentFactory, QuadratureInputChannel>();
+        registry->registerFactory<StandardComponentFactory, StartAnalogWaveformOutputAction>();
+        registry->registerFactory<StandardComponentFactory, StopAnalogWaveformOutputAction>();
     }
 };
 

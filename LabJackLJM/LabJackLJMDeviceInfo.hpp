@@ -38,6 +38,10 @@ public:
     virtual bool isHighSpeedCounter(int line) const = 0;
     virtual bool isInterruptCounter(int line) const = 0;
     virtual bool isQuadraturePhaseA(int line) const = 0;
+    virtual bool isConditionalReset(int line) const = 0;
+    
+    virtual int getMaxNumOutputStreams() const = 0;
+    virtual bool supportsHardwareTriggeredStream() const = 0;
     
 private:
     virtual bool parseLineName(const std::string &name, int &line) const = 0;

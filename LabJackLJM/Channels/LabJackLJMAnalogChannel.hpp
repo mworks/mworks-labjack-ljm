@@ -61,6 +61,38 @@ public:
 };
 
 
+class AnalogWaveformChannel : public AnalogChannel {
+    
+public:
+    static const std::string LOOP;
+    
+    static void describeComponent(ComponentInfo &info);
+    
+    explicit AnalogWaveformChannel(const ParameterValueMap &parameters);
+    
+    void resolveLine(DeviceInfo &deviceInfo) override;
+    
+    void setStreamOutIndex(int index) { streamOutIndex = index; }
+    int getStreamOutIndex() const { return streamOutIndex; }
+    
+    void setStreamOutAddress(int address) { streamOutAddress = address; }
+    int getStreamOutAddress() const { return streamOutAddress; }
+    
+    void setTargetAddress(int address) { targetAddress = address; }
+    int getTargetAddress() const { return targetAddress; }
+    
+    bool getData(std::vector<double> &dataBuffer) const;
+    bool getLoop() const { return loop->getValue().getBool(); }
+    
+private:
+    const VariablePtr loop;
+    int streamOutIndex;
+    int streamOutAddress;
+    int targetAddress;
+    
+};
+
+
 END_NAMESPACE_MW_LABJACK_LJM
 
 

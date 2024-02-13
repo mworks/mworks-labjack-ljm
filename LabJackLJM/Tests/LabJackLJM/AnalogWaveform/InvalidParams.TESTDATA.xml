@@ -1,0 +1,13 @@
+<?xml version="1.0"?>
+<marionette_info>
+  <requirements>
+    <feature name="labjack_ljm"/>
+  </requirements>
+  <expected_messages>
+    <message type="whole_message">ERROR: LabJack LJM analog waveform data list contains a non-numeric value [line 19, column 5]</message>
+    <message type="whole_message">ERROR: LabJack LJM analog waveform data string contains an invalid number of bytes [line 23, column 5]</message>
+    <message type="whole_message">ERROR: LabJack LJM analog waveform data must be provided as a list or a string [line 27, column 5]</message>
+    <message type="whole_message">ERROR: LabJack LJM analog waveform data interval must be greater than zero [line 31, column 5]</message>
+    <message type="whole_message">ERROR: LabJack LJM analog waveform data interval must be greater than zero [line 33, column 5]</message>
+  </expected_messages>
+</marionette_info>

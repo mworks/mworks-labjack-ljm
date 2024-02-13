@@ -136,6 +136,13 @@ class T8DeviceInfo : public DeviceInfo {
                 line == static_cast<int>(PhysicalLine::DIO14));
     }
     
+    bool isConditionalReset(int line) const override {
+        return isInRange<PhysicalLine::DIO0, PhysicalLine::DIO15>(line);
+    }
+    
+    int getMaxNumOutputStreams() const override { return 4; }
+    bool supportsHardwareTriggeredStream() const override { return true; }
+    
     bool parseLineName(const std::string &name, int &line) const override;
     
 };
@@ -274,6 +281,14 @@ class T7DeviceInfo : public DeviceInfo {
                 line == static_cast<int>(PhysicalLine::DIO6));
     }
     
+    bool isConditionalReset(int line) const override {
+        return (isInRange<PhysicalLine::DIO0, PhysicalLine::DIO3>(line) ||
+                isInRange<PhysicalLine::DIO6, PhysicalLine::DIO7>(line));
+    }
+    
+    int getMaxNumOutputStreams() const override { return 4; }
+    bool supportsHardwareTriggeredStream() const override { return true; }
+    
     bool parseLineName(const std::string &name, int &line) const override;
     
 };
@@ -383,6 +398,13 @@ class T4DeviceInfo : public DeviceInfo {
                 line == static_cast<int>(PhysicalLine::DIO6) ||
                 line == static_cast<int>(PhysicalLine::DIO8));
     }
+    
+    bool isConditionalReset(int line) const override {
+        return isInRange<PhysicalLine::DIO4, PhysicalLine::DIO9>(line);
+    }
+    
+    int getMaxNumOutputStreams() const override { return 4; }
+    bool supportsHardwareTriggeredStream() const override { return false; }
     
     bool parseLineName(const std::string &name, int &line) const override;
     

@@ -16,6 +16,8 @@ const std::string Device::DEVICE_TYPE("device_type");
 const std::string Device::CONNECTION_TYPE("connection_type");
 const std::string Device::IDENTIFIER("identifier");
 const std::string Device::UPDATE_INTERVAL("update_interval");
+const std::string Device::ANALOG_WAVEFORM_DATA_INTERVAL("analog_waveform_data_interval");
+const std::string Device::ANALOG_WAVEFORM_TRIGGER_LINE("analog_waveform_trigger_line");
 
 
 void Device::describeComponent(ComponentInfo &info) {
@@ -27,6 +29,8 @@ void Device::describeComponent(ComponentInfo &info) {
     info.addParameter(CONNECTION_TYPE, "ANY");
     info.addParameter(IDENTIFIER, "ANY");
     info.addParameter(UPDATE_INTERVAL);
+    info.addParameter(ANALOG_WAVEFORM_DATA_INTERVAL, "0");
+    info.addParameter(ANALOG_WAVEFORM_TRIGGER_LINE, false);
 }
 
 
@@ -36,8 +40,11 @@ Device::Device(const ParameterValueMap &parameters) :
     connectionType(variableOrText(parameters[CONNECTION_TYPE])->getValue().getString()),
     identifier(variableOrText(parameters[IDENTIFIER])->getValue().getString()),
     updateInterval(parameters[UPDATE_INTERVAL]),
+    analogWaveformDataInterval(parameters[ANALOG_WAVEFORM_DATA_INTERVAL]),
+    analogWaveformTriggerLine(optionalVariableOrText(parameters[ANALOG_WAVEFORM_TRIGGER_LINE])),
     clock(Clock::instance()),
     handle(-1),
+    analogWaveformsRunning(false),
     running(false)
 {
     if (updateInterval <= 0) {
@@ -62,6 +69,8 @@ void Device::addChild(std::map<std::string, std::string> parameters,
         analogInputChannels.emplace_back(std::move(channel));
     } else if (auto channel = boost::dynamic_pointer_cast<AnalogOutputChannel>(child)) {
         analogOutputChannels.emplace_back(std::move(channel));
+    } else if (auto channel = boost::dynamic_pointer_cast<AnalogWaveformChannel>(child)) {
+        analogWaveformChannels.emplace_back(std::move(channel));
     } else if (auto channel = boost::dynamic_pointer_cast<DigitalInputChannel>(child)) {
         digitalInputChannels.emplace_back(std::move(channel));
     } else if (auto channel = boost::dynamic_pointer_cast<DigitalOutputChannel>(child)) {
@@ -111,6 +120,9 @@ bool Device::initialize() {
     }
     if (haveAnalogOutputs()) {
         prepareAnalogOutputs(configBuffer);
+    }
+    if (haveAnalogWaveforms()) {
+        prepareAnalogWaveforms(configBuffer);
     }
     if (haveDigitalInputs()) {
         prepareDigitalInputs(configBuffer);
@@ -186,6 +198,9 @@ bool Device::stopDeviceIO() {
         if (haveDigitalOutputs()) {
             updateDigitalOutputs(configBuffer);
         }
+        if (haveAnalogWaveforms()) {
+            stopAnalogWaveforms();
+        }
         if (haveAnalogOutputs()) {
             updateAnalogOutputs(configBuffer);
         }
@@ -201,6 +216,32 @@ bool Device::stopDeviceIO() {
 }
 
 
+void Device::startAnalogWaveformOutput() {
+    lock_guard lock(mutex);
+    
+    if (!running) {
+        merror(M_IODEVICE_MESSAGE_DOMAIN, "LabJack LJM device is not running");
+    } else if (!haveAnalogWaveforms()) {
+        merror(M_IODEVICE_MESSAGE_DOMAIN, "LabJack LJM device has no analog waveform channels");
+    } else {
+        startAnalogWaveforms();
+    }
+}
+
+
+void Device::stopAnalogWaveformOutput() {
+    lock_guard lock(mutex);
+    
+    if (!running) {
+        merror(M_IODEVICE_MESSAGE_DOMAIN, "LabJack LJM device is not running");
+    } else if (!haveAnalogWaveforms()) {
+        merror(M_IODEVICE_MESSAGE_DOMAIN, "LabJack LJM device has no analog waveform channels");
+    } else {
+        stopAnalogWaveforms();
+    }
+}
+
+
 void Device::IOBuffer::append(const std::string &name, double value) {
     int type;
     auto address = convertNameToAddress(name, type);
@@ -208,6 +249,14 @@ void Device::IOBuffer::append(const std::string &name, double value) {
     addresses.push_back(address);
     types.push_back(type);
     values.push_back(value);
+}
+
+
+void Device::IOBuffer::append(const IOBuffer &other) {
+    append(names, other.names);
+    append(addresses, other.addresses);
+    append(types, other.types);
+    append(values, other.values);
 }
 
 
@@ -306,6 +355,157 @@ void Device::updateAnalogOutputs(WriteBuffer &configBuffer, bool active) {
     for (auto &channel : analogOutputChannels) {
         configBuffer.append(channel->getCanonicalLineName(), (active ? channel->getValue() : 0.0));
     }
+}
+
+
+void Device::prepareAnalogWaveforms(WriteBuffer &configBuffer) {
+    if (!analogWaveformTriggerLine) {
+        // IO_CONFIG_SET_CURRENT_TO_FACTORY apparently does not reset STREAM_TRIGGER_INDEX,
+        // so we must reset it ourselves.  If we don't, the device will be stuck in
+        // triggered mode after running an experiment with a trigger line, and the user will
+        // need to power cycle the device to reset it.
+        if (deviceInfo->supportsHardwareTriggeredStream()) {
+            configBuffer.append("STREAM_TRIGGER_INDEX", 0);
+        }
+    } else {
+        if (!deviceInfo->supportsHardwareTriggeredStream()) {
+            throw SimpleException(M_IODEVICE_MESSAGE_DOMAIN,
+                                  "LabJack LJM device does not support triggered analog waveform output");
+        }
+        
+        const auto lineName = analogWaveformTriggerLine->getValue().getString();
+        const auto line = deviceInfo->reserveLineForName(lineName);
+        if (!deviceInfo->isConditionalReset(line)) {
+            throw SimpleException(M_IODEVICE_MESSAGE_DOMAIN,
+                                  boost::format("%s is not a conditional reset line and cannot be used to trigger "
+                                                "analog waveform output") % lineName);
+        }
+        const auto canonicalLineName = deviceInfo->getCanonicalLineName(line);
+        
+        configBuffer.append(canonicalLineName + "_EF_ENABLE", 0);
+        configBuffer.append(canonicalLineName + "_EF_INDEX", 12);
+        configBuffer.append(canonicalLineName + "_EF_CONFIG_A", 1);  // Rising edges
+        configBuffer.append(canonicalLineName + "_EF_CONFIG_B", 1);  // One edge per reset
+        // We configure the conditional reset to reset itself.  The folks at LabJack support say
+        // this isn't necessary, but we do it just to be sure that no other DIO extended feature
+        // is reset.
+        configBuffer.append(canonicalLineName + "_EF_CONFIG_C", deviceInfo->getDIOIndex(line));
+        // Enabling and disabling the conditional reset in startAnalogWaveforms and
+        // stopAnalogWaveforms, respectively, seems to break triggering, so we just enable it
+        // here and leave it enabled
+        configBuffer.append(canonicalLineName + "_EF_ENABLE", 1);
+        
+        configBuffer.append("STREAM_TRIGGER_INDEX", convertNameToAddress(canonicalLineName));
+    }
+    
+    const auto maxNumOutputStreams = deviceInfo->getMaxNumOutputStreams();
+    if (analogWaveformChannels.size() > maxNumOutputStreams) {
+        throw SimpleException(M_IODEVICE_MESSAGE_DOMAIN,
+                              (boost::format("LabJack LJM device supports at most %1% analog waveform channels")
+                               % maxNumOutputStreams));
+    }
+    
+    int streamOutIndex = 0;
+    for (auto &channel : analogWaveformChannels) {
+        channel->resolveLine(*deviceInfo);
+        channel->setStreamOutIndex(streamOutIndex);
+        channel->setStreamOutAddress(convertNameToAddress("STREAM_OUT" + std::to_string(streamOutIndex)));
+        channel->setTargetAddress(convertNameToAddress(channel->getCanonicalLineName()));
+        analogWaveformsResetBuffer.append(channel->getCanonicalLineName(), 0.0);
+        streamOutIndex++;
+    }
+    
+    configBuffer.append(analogWaveformsResetBuffer);
+}
+
+
+void Device::startAnalogWaveforms() {
+    if (analogWaveformsRunning) {
+        return;
+    }
+    
+    const auto dataInterval = analogWaveformDataInterval->getValue().getInteger();
+    if (dataInterval <= 0) {
+        merror(M_IODEVICE_MESSAGE_DOMAIN,
+               "LabJack LJM analog waveform data interval must be greater than zero");
+        return;
+    }
+    
+    const auto requestedScanRate = 1e6 / double(dataInterval);  // scans per second
+    std::vector<int> addresses;
+    
+    for (auto &channel : analogWaveformChannels) {
+        addresses.push_back(channel->getStreamOutAddress());
+        
+        std::vector<double> dataBuffer;
+        if (!channel->getData(dataBuffer)) {
+            return;
+        }
+        
+        if (channel->getLoop()) {
+            if (logError(LJM_PeriodicStreamOut(handle,
+                                               channel->getStreamOutIndex(),
+                                               channel->getTargetAddress(),
+                                               requestedScanRate,
+                                               dataBuffer.size(),
+                                               dataBuffer.data()),
+                         "Cannot initialize periodic analog waveform output on LabJack LJM device"))
+            {
+                return;
+            }
+        } else {
+            int bufferStatus = 0;
+            if (logError(LJM_InitializeAperiodicStreamOut(handle,
+                                                          channel->getStreamOutIndex(),
+                                                          channel->getTargetAddress(),
+                                                          requestedScanRate),
+                         "Cannot initialize aperiodic analog waveform output on LabJack LJM device") ||
+                logError(LJM_WriteAperiodicStreamOut(handle,
+                                                     channel->getStreamOutIndex(),
+                                                     dataBuffer.size(),
+                                                     dataBuffer.data(),
+                                                     &bufferStatus),
+                         "Cannot write aperiodic analog waveform output data to LabJack LJM device"))
+            {
+                return;
+            }
+        }
+    }
+    
+    auto actualScanRate = requestedScanRate;
+    if (logError(LJM_eStreamStart(handle,
+                                  1,  // We aren't reading, so this is ignored (but still must be >0)
+                                  addresses.size(),
+                                  addresses.data(),
+                                  &actualScanRate),
+                 "Cannot start analog waveform output on LabJack LJM device"))
+    {
+        return;
+    }
+    if (actualScanRate != requestedScanRate) {
+        mwarning(M_IODEVICE_MESSAGE_DOMAIN,
+                 "LabJack LJM device cannot output analog waveforms at desired rate: "
+                 "requested %g samples/second per channel, got %g samples/second per channel",
+                 requestedScanRate,
+                 actualScanRate);
+    }
+    
+    analogWaveformsRunning = true;
+}
+
+
+void Device::stopAnalogWaveforms() {
+    if (!analogWaveformsRunning) {
+        return;
+    }
+    
+    if (logError(LJM_eStreamStop(handle), "Cannot stop analog waveform output on LabJack LJM device") ||
+        logError(analogWaveformsResetBuffer.write(handle), "Cannot reset analog waveform output on LabJack LJM device"))
+    {
+        return;
+    }
+    
+    analogWaveformsRunning = false;
 }
 
 

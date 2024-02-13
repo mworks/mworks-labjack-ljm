@@ -1,0 +1,34 @@
+var data_interval = 5ms
+var data = []
+
+labjack_ljm labjack (
+    update_interval = 10ms
+    analog_waveform_data_interval = data_interval
+    autostart = true
+    ) {
+    labjack_ljm_analog_waveform (
+        line = dac0
+        data = data
+        )
+}
+
+
+protocol {
+    // Data list item not a number
+    data = [1, 2.0, 'three']
+    labjack_ljm_start_analog_waveform_output (labjack)
+
+    // Data string has wrong number of bytes
+    data = '0' * 9
+    labjack_ljm_start_analog_waveform_output (labjack)
+
+    // Data isn't list or string
+    data = 3
+    labjack_ljm_start_analog_waveform_output (labjack)
+
+    // Invalid data interval
+    data_interval = 0
+    labjack_ljm_start_analog_waveform_output (labjack)
+    data_interval = -1
+    labjack_ljm_start_analog_waveform_output (labjack)
+}
