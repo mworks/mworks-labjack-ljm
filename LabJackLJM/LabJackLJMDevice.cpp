@@ -18,6 +18,7 @@ const std::string Device::IDENTIFIER("identifier");
 const std::string Device::UPDATE_INTERVAL("update_interval");
 const std::string Device::ANALOG_WAVEFORM_DATA_INTERVAL("analog_waveform_data_interval");
 const std::string Device::ANALOG_WAVEFORM_TRIGGER_LINE("analog_waveform_trigger_line");
+const std::string Device::READ_INPUTS_WHILE_STOPPED("read_inputs_while_stopped");
 
 
 void Device::describeComponent(ComponentInfo &info) {
@@ -31,6 +32,7 @@ void Device::describeComponent(ComponentInfo &info) {
     info.addParameter(UPDATE_INTERVAL);
     info.addParameter(ANALOG_WAVEFORM_DATA_INTERVAL, "0");
     info.addParameter(ANALOG_WAVEFORM_TRIGGER_LINE, false);
+    info.addParameter(READ_INPUTS_WHILE_STOPPED, "NO");
 }
 
 
@@ -42,6 +44,7 @@ Device::Device(const ParameterValueMap &parameters) :
     updateInterval(parameters[UPDATE_INTERVAL]),
     analogWaveformDataInterval(parameters[ANALOG_WAVEFORM_DATA_INTERVAL]),
     analogWaveformTriggerLine(optionalVariableOrText(parameters[ANALOG_WAVEFORM_TRIGGER_LINE])),
+    readInputsWhileStopped(parameters[READ_INPUTS_WHILE_STOPPED]),
     clock(Clock::instance()),
     handle(-1),
     analogWaveformsRunning(false),
@@ -54,8 +57,23 @@ Device::Device(const ParameterValueMap &parameters) :
 
 
 Device::~Device() {
+    if (readInputsTask) {
+        stopReadInputsTask();
+    }
+    
     if (-1 != handle) {
-        logError(LJM_eWriteName(handle, "LED_COMM", 0), "Cannot turn off LabJack LJM device COMM LED");
+        WriteBuffer configBuffer;
+        if (readInputsWhileStopped) {
+            if (haveQuadratureInputs()) {
+                updateQuadratureInputs(configBuffer);
+            }
+            if (haveCounters()) {
+                updateCounters(configBuffer);
+            }
+        }
+        configBuffer.append("LED_COMM", 0);
+        logError(configBuffer.write(handle), "Cannot deconfigure LabJack LJM device");
+        
         logError(LJM_Close(handle), "Cannot close LabJack LJM device");
     }
 }
@@ -132,13 +150,23 @@ bool Device::initialize() {
     }
     if (haveCounters()) {
         prepareCounters(configBuffer);
+        if (readInputsWhileStopped) {
+            updateCounters(configBuffer, true);
+        }
     }
     if (haveQuadratureInputs()) {
         prepareQuadratureInputs(configBuffer);
+        if (readInputsWhileStopped) {
+            updateQuadratureInputs(configBuffer, true);
+        }
     }
     
     if (logError(configBuffer.write(handle), "Cannot configure LabJack LJM device")) {
         return false;
+    }
+    
+    if (haveInputs() && readInputsWhileStopped) {
+        startReadInputsTask();
     }
     
     return true;
@@ -157,10 +185,10 @@ bool Device::startDeviceIO() {
         if (haveDigitalOutputs()) {
             updateDigitalOutputs(configBuffer, true);
         }
-        if (haveCounters()) {
+        if (haveCounters() && !readInputsWhileStopped) {
             updateCounters(configBuffer, true);
         }
-        if (haveQuadratureInputs()) {
+        if (haveQuadratureInputs() && !readInputsWhileStopped) {
             updateQuadratureInputs(configBuffer, true);
         }
         
@@ -183,16 +211,16 @@ bool Device::stopDeviceIO() {
     lock_guard lock(mutex);
     
     if (running) {
-        if (readInputsTask) {
+        if (readInputsTask && !readInputsWhileStopped) {
             stopReadInputsTask();
         }
         
         WriteBuffer configBuffer;
         
-        if (haveQuadratureInputs()) {
+        if (haveQuadratureInputs() && !readInputsWhileStopped) {
             updateQuadratureInputs(configBuffer);
         }
-        if (haveCounters()) {
+        if (haveCounters() && !readInputsWhileStopped) {
             updateCounters(configBuffer);
         }
         if (haveDigitalOutputs()) {

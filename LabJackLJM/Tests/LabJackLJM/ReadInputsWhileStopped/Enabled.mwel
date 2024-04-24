@@ -1,0 +1,71 @@
+%include 'Shared.inc'
+
+
+labjack_ljm labjack (
+    update_interval = 3ms
+    read_inputs_while_stopped = true
+    ) {
+    labjack_channels ()
+}
+
+
+protocol {
+    wait (2s)
+
+    // Even though the device isn't started, inputs should be assigned
+    assert_analog_input (0.0)
+    assert_digital_input (false)
+    assert_counter (0)
+    assert_quadrature_input (0)
+
+    start_io_device (labjack)
+    wait (2s)
+
+    assert_analog_input (4.75)
+    assert_digital_input (true)
+    assert_counter (1)
+    assert_quadrature_input (1)
+
+    counter_signal = false
+    quadrature_signal = 3
+    wait (2s)
+
+    assert_counter (1)
+    assert_quadrature_input (2)
+
+    counter_signal = true
+    quadrature_signal = 2
+    wait (2s)
+
+    assert_counter (2)
+    assert_quadrature_input (3)
+
+    stop_io_device (labjack)
+    wait (2s)
+
+    // Even though the device is stopped, inputs should be assigned
+    assert_analog_input (0.0)
+    assert_digital_input (false)
+    assert_counter (2)
+    assert_quadrature_input (4)
+
+    quadrature_signal = 1
+    start_io_device (labjack)
+    wait (2s)
+
+    // After restarting the device, counter and quadrature values should not be
+    // reset
+    assert_analog_input (4.75)
+    assert_digital_input (true)
+    assert_counter (3)
+    assert_quadrature_input (5)
+
+    stop_io_device (labjack)
+    wait (2s)
+
+    // Even though the device is stopped, inputs should be assigned
+    assert_analog_input (0.0)
+    assert_digital_input (false)
+    assert_counter (3)
+    assert_quadrature_input (4)
+}

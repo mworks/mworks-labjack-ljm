@@ -1,0 +1,61 @@
+%include 'Shared.inc'
+
+
+labjack_ljm labjack (
+    update_interval = 3ms
+    ) {
+    labjack_channels ()
+}
+
+
+protocol {
+    wait (2s)
+
+    assert_analog_input (NO_VALUE)
+    assert_digital_input (NO_VALUE)
+    assert_counter (NO_VALUE)
+    assert_quadrature_input (NO_VALUE)
+
+    digital_input = false
+    start_io_device (labjack)
+    wait (2s)
+
+    assert_analog_input (4.75)
+    assert_digital_input (true)
+    assert_counter (0)
+    assert_quadrature_input (0)
+
+    counter_signal = false
+    quadrature_signal = 3
+    wait (2s)
+
+    assert_counter (0)
+    assert_quadrature_input (0)
+
+    counter_signal = true
+    quadrature_signal = 2
+    wait (2s)
+
+    assert_counter (1)
+    assert_quadrature_input (1)
+
+    stop_io_device (labjack)
+    wait (2s)
+
+    assert_analog_input (4.75)
+    assert_digital_input (true)
+    assert_counter (1)
+    assert_quadrature_input (1)
+
+    analog_input = 0.0
+    digital_input = false
+    start_io_device (labjack)
+    wait (2s)
+
+    // After restarting the device, counter and quadrature values should be
+    // reset
+    assert_analog_input (4.75)
+    assert_digital_input (true)
+    assert_counter (0)
+    assert_quadrature_input (0)
+}

@@ -27,6 +27,7 @@ public:
     static const std::string UPDATE_INTERVAL;
     static const std::string ANALOG_WAVEFORM_DATA_INTERVAL;
     static const std::string ANALOG_WAVEFORM_TRIGGER_LINE;
+    static const std::string READ_INPUTS_WHILE_STOPPED;
     
     static void describeComponent(ComponentInfo &info);
     
@@ -123,6 +124,7 @@ private:
     const MWTime updateInterval;
     const VariablePtr analogWaveformDataInterval;
     const VariablePtr analogWaveformTriggerLine;
+    const bool readInputsWhileStopped;
     
     const boost::shared_ptr<Clock> clock;
     
