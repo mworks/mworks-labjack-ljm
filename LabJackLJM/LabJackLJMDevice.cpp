@@ -288,6 +288,15 @@ void Device::IOBuffer::append(const IOBuffer &other) {
 }
 
 
+const char * Device::IOBuffer::nameForAddress(int address) const {
+    auto iter = std::find(addresses.begin(), addresses.end(), address);
+    if (iter != addresses.end()) {
+        return names.at(std::distance(addresses.begin(), iter)).c_str();
+    }
+    return "UNKNOWN";
+}
+
+
 int Device::WriteBuffer::write(int handle) {
     if (addresses.empty()) {
         return LJME_NOERROR;
@@ -300,10 +309,11 @@ int Device::WriteBuffer::write(int handle) {
                                       types.data(),
                                       values.data(),
                                       &errorAddress);
-    if (LJME_NOERROR != result) {
+    if (LJME_NOERROR != result && -1 != errorAddress) {
         merror(M_IODEVICE_MESSAGE_DOMAIN,
-               "Error writing to LabJack LJM register \"%s\"",
-               names.at(errorAddress).c_str());
+               "Error writing to LabJack LJM register %d (%s)",
+               errorAddress,
+               nameForAddress(errorAddress));
     }
     
     return result;
@@ -330,10 +340,11 @@ int Device::ReadBuffer::read(int handle) {
                                      types.data(),
                                      values.data(),
                                      &errorAddress);
-    if (LJME_NOERROR != result) {
+    if (LJME_NOERROR != result && -1 != errorAddress) {
         merror(M_IODEVICE_MESSAGE_DOMAIN,
-               "Error reading from LabJack LJM register \"%s\"",
-               names.at(errorAddress).c_str());
+               "Error reading from LabJack LJM register %d (%s)",
+               errorAddress,
+               nameForAddress(errorAddress));
     }
     
     return result;

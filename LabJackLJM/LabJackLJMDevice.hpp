@@ -54,6 +54,7 @@ private:
         static void append(std::vector<T> &dst, const std::vector<T> &src) {
             dst.insert(dst.end(), src.begin(), src.end());
         }
+        const char * nameForAddress(int address) const;
         std::vector<std::string> names;
         std::vector<int> addresses;
         std::vector<int> types;
