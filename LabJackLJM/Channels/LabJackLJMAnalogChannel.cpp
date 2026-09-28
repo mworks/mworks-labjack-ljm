@@ -12,10 +12,25 @@
 BEGIN_NAMESPACE_MW_LABJACK_LJM
 
 
+const std::string AnalogInputChannel::RANGE_MIN("range_min");
+const std::string AnalogInputChannel::RANGE_MAX("range_max");
+
+
 void AnalogInputChannel::describeComponent(ComponentInfo &info) {
     AnalogChannel::describeComponent(info);
+    
     info.setSignature("iochannel/labjack_ljm_analog_input");
+    
+    info.addParameter(RANGE_MIN, false);
+    info.addParameter(RANGE_MAX, false);
 }
+
+
+AnalogInputChannel::AnalogInputChannel(const ParameterValueMap &parameters) :
+    AnalogChannel(parameters),
+    rangeMin(optionalVariable(parameters[RANGE_MIN])),
+    rangeMax(optionalVariable(parameters[RANGE_MAX]))
+{ }
 
 
 void AnalogInputChannel::resolveLine(DeviceInfo &deviceInfo) {
@@ -24,6 +39,16 @@ void AnalogInputChannel::resolveLine(DeviceInfo &deviceInfo) {
         throw SimpleException(M_IODEVICE_MESSAGE_DOMAIN,
                               boost::format("%s is not an analog input line") % getLineName());
     }
+}
+
+
+double AnalogInputChannel::getOptimalRange(DeviceInfo &deviceInfo) const {
+    if (rangeMin && rangeMax) {
+        auto minVoltage = rangeMin->getValue().getFloat();
+        auto maxVoltage = rangeMax->getValue().getFloat();
+        return deviceInfo.getOptimalAINRange(minVoltage, maxVoltage);
+    }
+    return 0.0;
 }
 
 

@@ -26,17 +26,26 @@ public:
 class AnalogInputChannel : public AnalogChannel {
     
 public:
+    static const std::string RANGE_MIN;
+    static const std::string RANGE_MAX;
+    
     static void describeComponent(ComponentInfo &info);
     
-    using AnalogChannel::AnalogChannel;
+    explicit AnalogInputChannel(const ParameterValueMap &parameters);
     
     void resolveLine(DeviceInfo &deviceInfo) override;
+    
+    double getOptimalRange(DeviceInfo &deviceInfo) const;
     
     void setValue(double value, MWTime time) const {
         // Analog signals are expected to be continuous, so update the variable
         // even if the value hasn't changed
         getValueVar()->setValue(Datum(value), time);
     }
+    
+private:
+    const VariablePtr rangeMin;
+    const VariablePtr rangeMax;
     
 };
 

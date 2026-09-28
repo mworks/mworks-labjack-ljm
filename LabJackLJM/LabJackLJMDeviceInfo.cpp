@@ -144,6 +144,7 @@ class T8DeviceInfo : public DeviceInfo {
     bool supportsHardwareTriggeredStream() const override { return true; }
     
     bool parseLineName(const std::string &name, int &line) const override;
+    bool getAINRange(double maxAbsVoltage, double &range) const override;
     
 };
 
@@ -290,6 +291,7 @@ class T7DeviceInfo : public DeviceInfo {
     bool supportsHardwareTriggeredStream() const override { return true; }
     
     bool parseLineName(const std::string &name, int &line) const override;
+    bool getAINRange(double maxAbsVoltage, double &range) const override;
     
 };
 
@@ -407,6 +409,7 @@ class T4DeviceInfo : public DeviceInfo {
     bool supportsHardwareTriggeredStream() const override { return false; }
     
     bool parseLineName(const std::string &name, int &line) const override;
+    bool getAINRange(double maxAbsVoltage, double &range) const override;
     
 };
 
@@ -454,6 +457,20 @@ std::string DeviceInfo::getCanonicalLineName(int line) const {
         return "DIO" + std::to_string(getDIOIndex(line));
     }
     return "";
+}
+
+
+double DeviceInfo::getOptimalAINRange(double minVoltage, double maxVoltage) const {
+    auto range = 0.0;
+    if (minVoltage >= maxVoltage ||
+        !getAINRange(std::max(std::abs(minVoltage), std::abs(maxVoltage)), range))
+    {
+        throw SimpleException(M_IODEVICE_MESSAGE_DOMAIN,
+                              boost::format("Invalid analog input range for current LabJack LJM device: [%g, %g]")
+                              % minVoltage
+                              % maxVoltage);
+    }
+    return range;
 }
 
 
@@ -514,6 +531,21 @@ bool T8DeviceInfo::parseLineName(const std::string &name, int &line) const {
     auto iter = validNames.find(name);
     if (iter != validNames.end()) {
         line = static_cast<int>(iter->second);
+        return true;
+    }
+    return false;
+}
+
+
+bool T8DeviceInfo::getAINRange(double maxAbsVoltage, double &range) const {
+    static constexpr std::array<double, 11> supportedRanges = {
+        0.018, 0.036, 0.075, 0.15, 0.3, 0.6, 1.2, 2.4, 4.8, 9.6, 11.0
+    };
+    auto iter = std::find_if(supportedRanges.begin(),
+                             supportedRanges.end(),
+                             [maxAbsVoltage](double range) { return maxAbsVoltage <= range; });
+    if (iter != supportedRanges.end()) {
+        range = *iter;
         return true;
     }
     return false;
@@ -595,6 +627,19 @@ bool T7DeviceInfo::parseLineName(const std::string &name, int &line) const {
 }
 
 
+bool T7DeviceInfo::getAINRange(double maxAbsVoltage, double &range) const {
+    static constexpr std::array<double, 4> supportedRanges = { 0.01, 0.1, 1.0, 10.0 };
+    auto iter = std::find_if(supportedRanges.begin(),
+                             supportedRanges.end(),
+                             [maxAbsVoltage](double range) { return maxAbsVoltage <= range; });
+    if (iter != supportedRanges.end()) {
+        range = *iter;
+        return true;
+    }
+    return false;
+}
+
+
 bool T4DeviceInfo::parseLineName(const std::string &name, int &line) const {
     static const std::map<std::string, PhysicalLine> validNames {
         { "DAC0", PhysicalLine::DAC0 },
@@ -640,6 +685,16 @@ bool T4DeviceInfo::parseLineName(const std::string &name, int &line) const {
     auto iter = validNames.find(name);
     if (iter != validNames.end()) {
         line = static_cast<int>(iter->second);
+        return true;
+    }
+    return false;
+}
+
+
+bool T4DeviceInfo::getAINRange(double maxAbsVoltage, double &range) const {
+    if (maxAbsVoltage <= 10.0) {
+        // T4 supports only the default range
+        range = 0.0;
         return true;
     }
     return false;

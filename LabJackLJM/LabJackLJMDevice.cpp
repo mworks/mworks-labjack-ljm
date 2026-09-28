@@ -362,7 +362,12 @@ int Device::convertNameToAddress(const std::string &name, int &type) {
 void Device::prepareAnalogInputs(WriteBuffer &configBuffer) {
     for (auto &channel : analogInputChannels) {
         channel->resolveLine(*deviceInfo);
-        inputBuffer.append(channel->getCanonicalLineName());
+        auto &line = channel->getCanonicalLineName();
+        auto range = channel->getOptimalRange(*deviceInfo);
+        if (range != 0.0) {
+            configBuffer.append(line + "_RANGE", range);
+        }
+        inputBuffer.append(line);
     }
 }
 

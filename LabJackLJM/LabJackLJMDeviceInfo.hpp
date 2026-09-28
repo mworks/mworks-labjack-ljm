@@ -27,6 +27,8 @@ public:
     
     std::string getCanonicalLineName(int line) const;
     
+    double getOptimalAINRange(double minVoltage, double maxVoltage) const;
+    
     virtual bool isDAC(int line) const = 0;
     virtual bool isAIN(int line) const = 0;
     virtual bool isDIO(int line) const = 0;
@@ -45,6 +47,7 @@ public:
     
 private:
     virtual bool parseLineName(const std::string &name, int &line) const = 0;
+    virtual bool getAINRange(double maxAbsVoltage, double &range) const = 0;
     
     std::set<int> linesInUse;
     

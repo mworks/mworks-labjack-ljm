@@ -8,7 +8,7 @@ platform: macos
 allowed_child: LabJack LJM Channel
 description: |
     Interface to devices compatible with the `LabJack LJM library
-    <https://labjack.com/pages/support?doc=/software-driver/ljm-users-guide/>`_.
+    <https://support.labjack.com/docs/ljm-library-overview>`_.
     Currently, the LabJack `T4 <https://labjack.com/products/labjack-t4>`_ ,
     `T7 <https://labjack.com/products/labjack-t7>`_, and `T8
     <https://labjack.com/products/t8>`_ are supported.
@@ -16,7 +16,7 @@ description: |
     For information on acceptable values for the parameters `device_type`_,
     `connection_type`_, and `identifier`_, see the documentation for the
     `LJM_OpenS function
-    <https://labjack.com/pages/support/?doc=/software-driver/ljm-users-guide/opens>`_.
+    <https://support.labjack.com/docs/opens-ljm-user-s-guide>`_.
 parameters: 
   - 
     name: device_type
@@ -55,7 +55,7 @@ parameters:
         Name of the digital line that triggers the start of output on a `LabJack
         LJM Analog Waveform Channel`.  The line must support the `Conditional
         Reset
-        <https://labjack.com/pages/support/?doc=/datasheets/t-series-datasheet/13213-conditional-reset-t-series-datasheet/>`_
+        <https://support.labjack.com/docs/13-2-13-conditional-reset-t-series-datasheet>`_
         extended feature.
 
         When a trigger line is specified,
@@ -100,7 +100,12 @@ platform: macos
 name: LabJack LJM Analog Input Channel
 signature: iochannel/labjack_ljm_analog_input
 isa: LabJack LJM Channel
-description: Analog input channel on a `LabJack LJM Device`
+description: |
+    Analog input channel on a `LabJack LJM Device`.
+
+    If both `range_min`_ and `range_max`_ are specified, the channel will use
+    the narrowest supported analog-input range that includes the provided
+    limits. Otherwise, the default analog-input range will be used.
 parameters: 
   - 
     name: line
@@ -111,6 +116,14 @@ parameters:
     name: value
     required: yes
     description: Variable in which to store input voltage values
+  - 
+    name: range_min
+    example: -10.0
+    description: Minimum expected input voltage
+  - 
+    name: range_max
+    example: 10.0
+    description: Maximum expected input voltage
 
 
 ---
@@ -314,9 +327,9 @@ description: |
 
     Counts the rising edge of pulses on the selected digital line.  Supports
     both `high-speed
-    <https://labjack.com/pages/support/?doc=/datasheets/t-series-datasheet/1328-high-speed-counter-t-series-datasheet>`_
+    <https://support.labjack.com/docs/13-2-8-high-speed-counter-t-series-datasheet>`_
     and `interrupt
-    <https://labjack.com/pages/support/?doc=/datasheets/t-series-datasheet/1329-interrupt-counter-t-series-datasheet>`_
+    <https://support.labjack.com/docs/13-2-9-interrupt-counter-t-series-datasheet>`_
     counters.
 parameters: 
   - 
@@ -350,7 +363,7 @@ parameters:
         Note that only specific pairs of digital lines can be used for
         quadrature input.  For more information, see the `LabJack T-series
         datasheet
-        <https://labjack.com/pages/support/?doc=/datasheets/t-series-datasheet/13211-quadrature-in-t-series-datasheet>`_.
+        <https://support.labjack.com/docs/13-2-11-quadrature-in-t-series-datasheet>`_.
   - 
     name: value
     required: yes
